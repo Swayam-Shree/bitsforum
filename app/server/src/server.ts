@@ -11,10 +11,7 @@ const port = process.env.port || 6969;
 app.use(cors({ origin: "http://localhost:5173" }));
 app.use(express.json());
 
-app.get('/', (req: Request, res: Response) => {
-	res.send("Hello World!");
-});
-
+// after each user logs in
 app.post("/loggedin", async (req: Request, res: Response) => {
 	const { uid, email } = req.body;
 
@@ -54,6 +51,7 @@ app.delete("/deleteGroup/:groupId", async (req: Request, res: Response) => {
 	res.send(result).status(200);
 });
 
+// list of groups joined and not joined by a user
 app.get("/joinedGroups/:uid", async (req: Request, res: Response) => {
 	const { uid } = req.params;
 
@@ -105,6 +103,22 @@ app.delete("/leaveGroup/:groupId-:uid", async (req: Request, res: Response) => {
 	res.send(result).status(200);
 });
 
+app.post("/makeAdmin/:groupId-:uid", async (req: Request, res: Response) => {
+	const { groupId, uid } = req.params;
+
+	console.log(groupId, uid);
+
+	const result = await db.collection("groups").updateOne({
+		_id: new ObjectId(groupId)
+	}, {
+		$push: {
+			admins: uid
+		} as PullOperator<Document>
+	});
+
+	res.send(result).status(200);
+});
+
 app.post("/addUser", async (req: Request, res: Response) => {
 	const { groupId, email } = req.body;
 
@@ -134,7 +148,27 @@ app.post("/addUser", async (req: Request, res: Response) => {
 		}
 	});
 
-	res.status(200).send(result);
+	res.status(200).send(user.uid);
+});
+
+app.get("/getGroup/:groupId", async (req: Request, res: Response) => {
+	const { groupId } = req.params;
+
+	const result = await db.collection("groups").findOne({
+		_id: new ObjectId(groupId)
+	});
+
+	res.send(result).status(200);
+});
+
+app.get("/getEmail/:uid", async (req: Request, res: Response) => {
+	const { uid } = req.params;
+
+	const result = await db.collection("users").findOne({
+		uid: uid
+	});
+
+	res.status(200).send(result?.email);
 });
 
 app.listen(port, () => {
