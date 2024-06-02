@@ -15,14 +15,15 @@ app.get('/', (req: Request, res: Response) => {
 	res.send("Hello World!");
 });
 
-app.post("/loggedin/:uid", async (req: Request, res: Response) => {
-	const { uid } = req.params;
+app.post("/loggedin", async (req: Request, res: Response) => {
+	const { uid, email } = req.body;
 
 	const result = await db.collection("users").updateOne({
 		uid: uid
 	}, {
 		$set: {
-			uid: uid
+			uid: uid,
+			email: email
 		}
 	}, {
 		upsert: true
@@ -102,6 +103,38 @@ app.delete("/leaveGroup/:groupId-:uid", async (req: Request, res: Response) => {
 	});
 
 	res.send(result).status(200);
+});
+
+app.post("/addUser", async (req: Request, res: Response) => {
+	const { groupId, email } = req.body;
+
+	const user = await db.collection("users").findOne({
+		email: email
+	});
+
+	if (!user) {
+		res.status(404).send("user doesn't exist");
+		return;
+	}
+
+	const group = await db.collection("groups").findOne({
+		_id: new ObjectId(String(groupId))
+	});
+
+	if (group?.allMembers.includes(user.uid)) {
+		res.status(400).send("User already in group");
+		return;
+	}
+
+	const result = await db.collection("groups").updateOne({
+		_id: new ObjectId(String(groupId))
+	}, {
+		$push: {
+			allMembers: user.uid
+		}
+	});
+
+	res.status(200).send(result);
 });
 
 app.listen(port, () => {

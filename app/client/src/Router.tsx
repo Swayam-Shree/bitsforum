@@ -5,6 +5,7 @@ import Navbar from "./components/Navbar.tsx";
 import Home from "./pages/Home.tsx";
 import Profile from "./pages/Profile.tsx";
 import Groups from "./pages/Groups.tsx";
+import GroupView from "./pages/GroupView.tsx";
 
 export default function Router() {
 	return (
@@ -14,6 +15,7 @@ export default function Router() {
 				<Route path="/" element={<Home />} />
 				<Route path="/groups" element={<Groups />} />
 				<Route path="/profile" element={<Profile />} />
+				<Route path="/group/:id" element={<GroupView />} />
 				<Route path="*" element={<div>404, not found</div>} />
 			</Routes>
 		</>

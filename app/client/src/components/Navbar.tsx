@@ -17,17 +17,17 @@ export default function Navbar() {
 
 	return (<div className="flex justify-around m-[8px] gap-[16px]">
 		<NavLink 
-			className={({isActive}) => { return `px-[16px] text-blue-700 text-center ${isActive ? "border-b border-blue-700" : ""}`}}
+			className={({isActive}) => { return `px-[16px] text-blue-700 text-center hover:bg-slate-200 ${isActive ? "border-b border-blue-700" : ""}`}}
 			to="/">
 				Home
 		</NavLink>
 		<NavLink 
-			className={({isActive}) => { return `px-[16px] text-blue-700 text-center ${isActive ? "border-b border-blue-700" : ""}`}}
+			className={({isActive}) => { return `px-[16px] text-blue-700 text-center hover:bg-slate-200 ${isActive ? "border-b border-blue-700" : ""}`}}
 			to="/groups">
 				Browse Groups
 		</NavLink>
 		<NavLink
-			className={({isActive}) => { return `px-[16px] text-blue-700 text-center ${isActive ? "border-b border-blue-700" : ""}`}}
+			className={({isActive}) => { return `px-[16px] text-blue-700 text-center hover:bg-slate-200 ${isActive ? "border-b border-blue-700" : ""}`}}
 			to="/profile">
 				Profile
 		</NavLink>

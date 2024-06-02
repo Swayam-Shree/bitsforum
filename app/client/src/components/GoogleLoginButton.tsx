@@ -12,8 +12,15 @@ export default function GoogleLoginButton() {
 
 	async function handleLogin() {
 		await signInWithPopup(auth, provider);
-		await fetch(`http://localhost:6969/loggedin/${auth.currentUser?.uid}`, {
-			method: "POST"
+		await fetch(`http://localhost:6969/loggedin`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json"
+			},
+			body: JSON.stringify({
+				uid: auth.currentUser?.uid,
+				email: auth.currentUser?.email,
+			})
 		});
 		navigate("/");
 	}

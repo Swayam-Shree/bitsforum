@@ -14,7 +14,7 @@ export default function JoinGroupCard({ data }: { data: Group }) {
 	const [lastAdminWarning, setLastAdminWarning] = useState(false);
 
 	async function handleView() {
-		
+		navigate(`/group/${data._id}`);
 	}
 
 	async function handleLeave() {

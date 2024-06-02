@@ -12,7 +12,7 @@ export default function Home() {
 
 	if (loading) return <div>Loading...</div>;
 	if (error) return <div>Error</div>;
-	if (user) {console.log("logged in")};
+	if (user) {console.log(user)};
 	
 	return (<div className="flex flex-col items-center mt-[100px] gap-[40px]">
 		<Typography variant="h6">Welcome to BITS forum</Typography>
