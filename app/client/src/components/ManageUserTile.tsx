@@ -1,20 +1,24 @@
 import { auth } from "../firebase";
 
+import { useNavigate } from "react-router-dom";
+
 import { useState, useEffect } from "react";
+
+import type { Group } from "../types";
 
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 
-export default function ManageUserTile({ uid, isAdmin, groupId, amAdmin, updateGroup, allMembers, admins }: {
+export default function ManageUserTile({ uid, isAdmin, groupId, amAdmin, updateGroup, group }: {
 		uid: string,
 		isAdmin: boolean,
 		groupId: string,
 		amAdmin: boolean,
-		updateGroup: (allMems: string[], adms: string[]) => void,
-		allMembers: string[],
-		admins: string[]
+		updateGroup: (group: Group) => void,
+		group: Group
 	}) {
 	const [email, setEmail] = useState("");
+	const navigate = useNavigate();
 
 	useEffect(() => {
 		async function fetchData() {
@@ -25,24 +29,32 @@ export default function ManageUserTile({ uid, isAdmin, groupId, amAdmin, updateG
 	}, []);
 
 	async function handleAdmin() {
-		const result = await fetch(`http://localhost:6969/makeAdmin/${groupId}-${uid}`, {
+		const result = await fetch(`http://localhost:6969/makeAdmin/${groupId}-${uid}-${auth.currentUser?.uid}`, {
 			method: "POST"
 		});
 
-		if (result.status === 200) {
-			admins = admins.concat(uid);
-			updateGroup(allMembers, admins);
+		if (result.status === 403) {
+			navigate("/profile");
+			alert(await result.text());
+			return;
+		} else if (result.status === 200) {
+			group.admins.push(uid);
+			updateGroup(group);
 		}
 	}
 	async function handleRemove() {
-		const result = await fetch(`http://localhost:6969/leaveGroup/${groupId}-${uid}`, {
+		const result = await fetch(`http://localhost:6969/removeUser/${groupId}-${uid}-${auth.currentUser?.uid}`, {
 			method: "DELETE"
 		});
 
-		if (result.status === 200) {
-			allMembers = allMembers.filter((member) => member !== uid);
-			admins = admins.filter((admin) => admin !== uid);
-			updateGroup(allMembers, admins);
+		if (result.status === 403) {
+			navigate("/profile");
+			alert(await result.text());
+			return;
+		} else if (result.status === 200) {
+			group.allMembers = group.allMembers.filter((member) => member !== uid);
+			group.admins = group.admins.filter((admin) => admin !== uid);
+			updateGroup(group);
 		}
 	}
 

@@ -1,6 +1,6 @@
 import { auth } from "../firebase";
 
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 
 import { useState, useEffect } from "react";
 
@@ -24,8 +24,8 @@ export default function GroupView() {
 	const [userEmailErrorText, setUserEmailErrorText] = useState("");
 
 	const [groupDetails, setGroupDetails] = useState<Group>();
-	const [allMembers, setAllMembers] = useState<string[]>([]);
-	const [admins, setAdmins] = useState<string[]>([]);
+
+	const navigate = useNavigate();
 
 	useEffect(() => {
 		async function fetchGroup() {
@@ -33,12 +33,25 @@ export default function GroupView() {
 			const group = await result.json();
 
 			setGroupDetails(group);
-			setAllMembers(group.allMembers);
-			setAdmins(group.admins);
 		}
 
 		fetchGroup();
 	}, []);
+
+	async function checkUserValidity() {
+		const result = await fetch(`http://localhost:6969/getGroup/${id}`);
+		const group = await result.json();
+
+		setGroupDetails(structuredClone(group));
+
+		if (!group.allMembers.includes(auth.currentUser?.uid || "")) {
+			navigate("/profile");
+			alert("Action incomplete. You have been removed from the group");
+			return false;
+		}
+		
+		return true;
+	}
 
 	async function handleAddUser() {
 		const result = await fetch(`http://localhost:6969/addUser`, {
@@ -48,19 +61,23 @@ export default function GroupView() {
 			},
 			body: JSON.stringify({
 				groupId: id,
+				requester: auth.currentUser?.uid,
 				email: userEmail
 			})
 		});
 
-		if (result.status === 404) {
+		if (result.status === 403) {
+			navigate("/profile");
+			alert(await result.text());
+		} else if (result.status === 404) {
 			setUserEmailError(true);
 			setUserEmailErrorText("User not found");
 		} else if (result.status === 400) {
 			setUserEmailError(true);
 			setUserEmailErrorText("User is already in current group");
 		} else if (result.status === 200) {
-			allMembers.push(await result.text());
-			setAllMembers(allMembers);
+			groupDetails?.allMembers.push(await result.text());
+			setGroupDetails(structuredClone(groupDetails));
 
 			setUserEmailError(false);
 			setUserEmail(emailDefault);
@@ -69,12 +86,7 @@ export default function GroupView() {
 	}
 
 	async function handleManageUser() {
-		const result = await fetch(`http://localhost:6969/getGroup/${id}`);
-		const group = await result.json();
-
-		setGroupDetails(group);
-		setAllMembers(group.allMembers);
-		setAdmins(group.admins);
+		if (!await checkUserValidity()) return;
 
 		setUserEmail(emailDefault);
 		setUserEmailError(false);
@@ -82,9 +94,8 @@ export default function GroupView() {
 		setManageUserModal(true);
 	}
 
-	function updateGroupDetails(allMems: string[], adms: string[]) {
-		setAllMembers(allMems);
-		setAdmins(adms);
+	function updateGroupDetails(group: Group) {
+		setGroupDetails(structuredClone(group));
 	}
 
 	return (<div>
@@ -92,7 +103,13 @@ export default function GroupView() {
 			<Typography variant="h4">{groupDetails?.groupName}</Typography>
 			<Typography variant="h6">{groupDetails?.groupDesc}</Typography>
 
-			<Button onClick={ handleManageUser } variant="outlined">Manage Users</Button>
+			{
+				groupDetails?.admins.includes(auth.currentUser?.uid || "") ? (
+					<Button onClick={ handleManageUser } variant="outlined">Manage Users</Button>
+				): (
+					<Button onClick={ handleManageUser } variant="outlined">View Users</Button>
+				)
+			}
 
 			<Modal
 				open={manageUserModal}
@@ -102,7 +119,7 @@ export default function GroupView() {
 					<Button color="error" onClick={ () => setManageUserModal(false) } variant="contained">Close</Button>
 
 					{
-						admins.includes(auth.currentUser?.uid || "") && <div className="flex flex-col gap-[12px]">
+						groupDetails?.admins.includes(auth.currentUser?.uid || "") && <div className="flex flex-col gap-[12px]">
 							<Typography variant="h5">Add Members</Typography>
 							<TextField
 								value={userEmail}
@@ -120,16 +137,15 @@ export default function GroupView() {
 
 					<div>
 						{
-							allMembers?.map((uid) => {
+							groupDetails?.allMembers.map((uid) => {
 								return (<ManageUserTile
 									key={uid}
 									uid={uid}
 									groupId={id || ""}
-									isAdmin={admins.includes(uid)}
-									amAdmin={admins.includes(auth.currentUser?.uid || "")}
+									isAdmin={groupDetails.admins.includes(uid)}
+									amAdmin={groupDetails.admins.includes(auth.currentUser?.uid || "")}
 									updateGroup={updateGroupDetails}
-									allMembers={allMembers}
-									admins={admins}
+									group={groupDetails}
 								/>);
 							})
 						}

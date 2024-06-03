@@ -44,7 +44,7 @@ export default function JoinGroupCard({ data }: { data: Group }) {
 		<Typography variant="body1">{ data.groupDesc }</Typography>
 		
 		<div className="grid grid-cols-[3fr_0.5fr] gap-[12px]">
-			<Button onClick={ handleView } variant="outlined">View</Button>
+			<Button onClick={ handleView } variant="outlined">Open</Button>
 			<Button onClick={ handleLeave } color="error" variant="contained">Leave</Button>
 		</div>
 

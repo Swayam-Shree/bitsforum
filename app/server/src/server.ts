@@ -11,6 +11,20 @@ const port = process.env.port || 6969;
 app.use(cors({ origin: "http://localhost:5173" }));
 app.use(express.json());
 
+async function validateAdminRequest(groupId: string, requester: string, res: Response) {
+	const group = await db.collection("groups").findOne({
+		_id: new ObjectId(String(groupId))
+	});
+
+	console.log(group?.admins, requester);
+	if (!group?.admins.includes(requester)) {
+		res.status(403).send("Action incomplete. You had been removed from the group.");
+		return false;
+	}
+
+	return true;
+}
+
 // after each user logs in
 app.post("/loggedin", async (req: Request, res: Response) => {
 	const { uid, email } = req.body;
@@ -103,10 +117,10 @@ app.delete("/leaveGroup/:groupId-:uid", async (req: Request, res: Response) => {
 	res.send(result).status(200);
 });
 
-app.post("/makeAdmin/:groupId-:uid", async (req: Request, res: Response) => {
-	const { groupId, uid } = req.params;
+app.post("/makeAdmin/:groupId-:uid-:requester", async (req: Request, res: Response) => {
+	const { groupId, uid, requester } = req.params;
 
-	console.log(groupId, uid);
+	if (!await validateAdminRequest(groupId, requester, res)) return;
 
 	const result = await db.collection("groups").updateOne({
 		_id: new ObjectId(groupId)
@@ -120,7 +134,9 @@ app.post("/makeAdmin/:groupId-:uid", async (req: Request, res: Response) => {
 });
 
 app.post("/addUser", async (req: Request, res: Response) => {
-	const { groupId, email } = req.body;
+	const { groupId, requester, email } = req.body;
+
+	if (!await validateAdminRequest(groupId, requester, res)) return;
 
 	const user = await db.collection("users").findOne({
 		email: email
@@ -149,6 +165,22 @@ app.post("/addUser", async (req: Request, res: Response) => {
 	});
 
 	res.status(200).send(user.uid);
+});
+app.delete("/removeUser/:groupId-:uid-:requester", async (req: Request, res: Response) => {
+	const { groupId, uid, requester } = req.params;
+
+	if (!await validateAdminRequest(groupId, requester, res)) return;
+
+	const result = await db.collection("groups").updateOne({
+		_id: new ObjectId(String(groupId))
+	}, {
+		$pull: {
+			allMembers: uid,
+			admins: uid
+		} as PullOperator<Document>
+	});
+
+	res.status(200).send(result);
 });
 
 app.get("/getGroup/:groupId", async (req: Request, res: Response) => {
