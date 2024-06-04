@@ -203,6 +203,43 @@ app.get("/getEmail/:uid", async (req: Request, res: Response) => {
 	res.status(200).send(result?.email);
 });
 
+app.post("/createPost", async (req: Request, res: Response) => {
+	const { groupId, uid, name, title, content, files } = req.body;
+
+	if (!await validateAdminRequest(groupId, uid, res)) return;
+
+	const result = await db.collection("posts").insertOne({
+		groupId: groupId,
+		uid: uid,
+		name: name,
+		title: title,
+		content: content,
+		files: files
+	});
+
+	res.status(200).send(result);
+});
+app.get("/getPosts/:groupId", async (req: Request, res: Response) => {
+	const { groupId } = req.params;
+
+	const result = await db.collection("posts").find({
+		groupId: groupId
+	}).toArray();
+
+	res.status(200).send(result);
+});
+app.delete("/deletePost/:groupId-:uid-:postId", async (req: Request, res: Response) => {
+	const { groupId, uid, postId } = req.params;
+
+	if (!await validateAdminRequest(groupId, uid, res)) return;
+
+	const result = await db.collection("posts").deleteOne({
+		_id: new ObjectId(postId)
+	});
+
+	res.status(200).send(result);
+});
+
 app.listen(port, () => {
 	console.log(`app listening on port ${port}`);
 });

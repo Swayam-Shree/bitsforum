@@ -1,22 +1,28 @@
-import { auth } from "../firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { auth, storage } from "../firebase";
 
 import { useParams, useNavigate } from "react-router-dom";
 
 import { useState, useEffect } from "react";
 
-import type { Group } from "../types";
+import type { Group, Post, PostFile } from "../types";
 
 import ManageUserTile from "../components/ManageUserTile";
+import PostDisplay from "../components/PostDisplay";
 
 import Button from "@mui/material/Button";
 import Modal from "@mui/material/Modal";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import LinearProgress from '@mui/material/LinearProgress';
+
+import AttachFileIcon from '@mui/icons-material/AttachFile';
 
 export default function GroupView() {
 	const { id } = useParams();
 
 	const [manageUserModal, setManageUserModal] = useState(false);
+	const [postModal, setPostModal] = useState(false);
 
 	const emailDefault = "f20XXXXXX@<campus>.bits-pilani.ac.in";
 	const [userEmail, setUserEmail] = useState(emailDefault);
@@ -25,17 +31,28 @@ export default function GroupView() {
 
 	const [groupDetails, setGroupDetails] = useState<Group>();
 
+	const [postTitle, setPostTitle] = useState("");
+	const [postTitleError, setPostTitleError] = useState(false);
+	const [postContent, setPostContent] = useState("");
+	const [postContentError, setPostContentError] = useState(false);
+	const [postFiles, setPostFiles] = useState<File[]>([]);
+
+	const [uploading, setUploading] = useState(false);
+
+	const [posts, setPosts] = useState<Post[]>([]);
+
 	const navigate = useNavigate();
 
 	useEffect(() => {
-		async function fetchGroup() {
-			const result = await fetch(`http://localhost:6969/getGroup/${id}`);
+		(async function loadData() {
+			let result = await fetch(`http://localhost:6969/getGroup/${id}`);
 			const group = await result.json();
-
 			setGroupDetails(group);
-		}
 
-		fetchGroup();
+			result = await fetch(`http://localhost:6969/getPosts/${id}`);
+			const posts = await result.json();
+			setPosts(posts);
+		})();
 	}, []);
 
 	async function checkUserValidity() {
@@ -84,7 +101,6 @@ export default function GroupView() {
 			setUserEmailErrorText("");
 		}
 	}
-
 	async function handleManageUser() {
 		if (!await checkUserValidity()) return;
 
@@ -94,8 +110,74 @@ export default function GroupView() {
 		setManageUserModal(true);
 	}
 
+	async function handleAddPost() {
+		if (!await checkUserValidity()) return;
+
+		setPostModal(true);
+	}
+	async function handleCreatePost() {
+		if (uploading) return;
+		if (!await checkUserValidity()) return;
+
+		setPostTitleError(!postTitle);
+		setPostContentError(!postContent);
+
+		if (!postTitle || !postContent) return;
+
+		setUploading(true);
+
+		let files: PostFile[] = [];
+
+		for (let i = 0; i < postFiles.length; ++i) {
+			const file = postFiles[i];
+			const storageRef = ref(storage, `${id}${file.name}`);
+			await uploadBytes(storageRef, file);
+			files.push({
+				name: file.name,
+				url: await getDownloadURL(storageRef)
+			});
+		}
+
+		let tmpPost = {
+			groupId: id,
+			uid: auth.currentUser?.uid,
+			name: auth.currentUser?.displayName,
+			title: postTitle,
+			content: postContent,
+			files: files
+		}
+
+		const result = await fetch("http://localhost:6969/createPost", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json"
+			},
+			body: JSON.stringify(tmpPost)
+		});
+
+		setUploading(false);
+		if (result.status === 403) {
+			navigate("/profile");
+			alert(await result.text());
+			return;
+		} else if (result.status === 200) {
+			let finalPost = {
+				...tmpPost,
+				_id: JSON.parse(await result.text()).insertedId
+			} as Post;
+			setPosts(posts.concat(finalPost));
+			setPostTitle("");
+			setPostContent("");
+			setPostFiles([]);
+			setPostModal(false);
+		}
+	}
+
 	function updateGroupDetails(group: Group) {
 		setGroupDetails(structuredClone(group));
+	}
+	function deletePost(postId: string) {
+		setPosts(posts.filter((post) => post._id !== postId));
 	}
 
 	return (<div>
@@ -104,9 +186,10 @@ export default function GroupView() {
 			<Typography variant="h6">{groupDetails?.groupDesc}</Typography>
 
 			{
-				groupDetails?.admins.includes(auth.currentUser?.uid || "") ? (
+				groupDetails?.admins.includes(auth.currentUser?.uid || "") ? ( <div className="flex justify-around gap-[32px]">
 					<Button onClick={ handleManageUser } variant="outlined">Manage Users</Button>
-				): (
+					<Button onClick={ handleAddPost } variant="outlined">Add Post</Button>
+				</div> ): (
 					<Button onClick={ handleManageUser } variant="outlined">View Users</Button>
 				)
 			}
@@ -116,7 +199,7 @@ export default function GroupView() {
 				onClose={ () => setManageUserModal(false) }
 			>	
 				<div className="flex flex-col bg-white m-[32px] p-[32px] min-w-[300px] gap-[12px]">
-					<Button color="error" onClick={ () => setManageUserModal(false) } variant="contained">Close</Button>
+					<Button onClick={ () => setManageUserModal(false) } color="error" variant="contained">Close</Button>
 
 					{
 						groupDetails?.admins.includes(auth.currentUser?.uid || "") && <div className="flex flex-col gap-[12px]">
@@ -128,6 +211,7 @@ export default function GroupView() {
 								label="Enter full user email"
 								variant="outlined"
 								helperText={userEmailErrorText}
+								size="small"
 							/>
 							<Button onClick={ handleAddUser } size="small" variant="contained">Add User</Button>
 						</div>
@@ -152,6 +236,65 @@ export default function GroupView() {
 					</div>
 				</div>
 			</Modal>
+
+			<Modal
+				open={postModal}
+				onClose={ () => setPostModal(false) }
+			>
+				<div className="flex flex-col bg-white m-[32px] p-[32px] min-w-[300px] gap-[12px]">
+					<Button color="error" onClick={ () => setPostModal(false) } variant="contained">Close</Button>
+					<Button onClick={ () => { setPostTitle(""); setPostContent(""); setPostFiles([]); } } color="error" variant="outlined">Clear</Button>
+
+					<Typography variant="h5">Add Post</Typography>
+					<TextField
+						value={postTitle}
+						onChange={ (e) => setPostTitle(e.target.value) }
+						label="Title"
+						variant="outlined"
+						size="small"
+						inputProps={{ maxLength: 128 }}
+						error={postTitleError}
+					/>
+					<TextField
+						value={postContent}
+						onChange={ (e) => setPostContent(e.target.value) }
+						label="Content"
+						variant="outlined"
+						multiline
+						rows={4}
+						size="small"
+						inputProps={{ maxLength: 2048 }}
+						error={postContentError}
+					/>
+					<div className="flex flex-col">
+						{
+							postFiles?.map( file => (<Typography key={file.name} variant="caption">
+								{"-" + file.name}
+							</Typography>))
+						}
+					</div>
+					<Button component="label" variant="outlined" startIcon={<AttachFileIcon />}>
+						Add Files
+							<input onChange={ (e) => setPostFiles(postFiles?.concat(Array.from(e?.target?.files || []))) } type="file" hidden multiple />
+					</Button>
+					{
+						uploading && <LinearProgress />
+					}
+					<Button onClick={ handleCreatePost } variant="contained">Create Post</Button>
+				</div>
+			</Modal>
+
+			{
+				posts.map((post) => {
+					return (<PostDisplay
+						key={post._id}
+						post={post}
+						deletePost={deletePost}
+						groupId={id || ""}
+						amAdmin={groupDetails?.admins.includes(auth.currentUser?.uid || "") || false}
+					/>);
+				})
+			}
 		</div>
 	</div>);
 }
