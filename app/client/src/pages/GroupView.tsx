@@ -147,7 +147,8 @@ export default function GroupView() {
 			name: auth.currentUser?.displayName,
 			title: postTitle,
 			content: postContent,
-			files: files
+			files: files,
+			commentAccess: 0 // default allow all users
 		}
 
 		const result = await fetch("http://localhost:6969/createPost", {
@@ -169,8 +170,9 @@ export default function GroupView() {
 				_id: JSON.parse(await result.text()).insertedId
 			} as Post;
 
-			posts.unshift(finalPost)
-			setPosts(posts);
+			setPosts([finalPost, ...posts]);
+			// posts.unshift(finalPost)
+			// setPosts(posts);
 
 			setPostTitle("");
 			setPostContent("");
@@ -193,8 +195,8 @@ export default function GroupView() {
 
 			{
 				groupDetails?.admins.includes(auth.currentUser?.uid || "") ? ( <div className="flex justify-around gap-[32px]">
-					<Button onClick={ handleManageUser } variant="outlined">Manage Users</Button>
-					<Button onClick={ handleAddPost } variant="outlined">Add Post</Button>
+					<Button onClick={ handleManageUser } color="secondary" variant="contained">Manage Users</Button>
+					<Button onClick={ handleAddPost } color="success" variant="contained">Add Post</Button>
 				</div> ): (
 					<Button onClick={ handleManageUser } variant="outlined">View Users</Button>
 				)
@@ -293,15 +295,17 @@ export default function GroupView() {
 			{
 				posts.map((post, index) => {
 					if (index === posts.length - 1) {
-						{/* @ts-ignore */}
 						return (<InView key={post._id}>
 							{
 								({inView, ref}: {inView: boolean, ref: any}) => {
 									if (inView) {
-										(async function loadMorePosts() {
+										(async () => {
 											const result = await fetch(`http://localhost:6969/getPosts/${id}-${posts.length}`);
 											const p = await result.json();
-											if (p.length) {
+											const pids: string[] = [];
+											for (let pp of posts) pids.push(pp._id);
+											
+											if (p.length && !pids.includes(p[0]._id)) {
 												p.sort((a: Post, b: Post) => {
 													return a._id > b._id ? -1 : 1;
 												});
@@ -320,13 +324,16 @@ export default function GroupView() {
 								}
 							}
 						</InView>);
+					} else {
+						return (<div key={post._id}>
+							<PostDisplay
+								post={post}
+								deletePost={deletePost}
+								groupId={id || ""}
+								amAdmin={groupDetails?.admins.includes(auth.currentUser?.uid || "") || false}
+							/>
+						</div>);
 					}
-					return (<div key={post._id}><PostDisplay
-						post={post}
-						deletePost={deletePost}
-						groupId={id || ""}
-						amAdmin={groupDetails?.admins.includes(auth.currentUser?.uid || "") || false}
-					/></div>);
 				})
 			}
 		</div>

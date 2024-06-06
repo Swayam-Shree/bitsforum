@@ -23,6 +23,18 @@ async function validateAdminRequest(groupId: string, requester: string, res: Res
 
 	return true;
 }
+// async function validateUserRequest(groupId: string, requester: string, res: Response) {
+// 	const group = await db.collection("groups").findOne({
+// 		_id: new ObjectId(String(groupId))
+// 	});
+
+// 	if (!group?.allMembers.includes(requester)) {
+// 		res.status(403).send("Action incomplete. You had been removed from the group.");
+// 		return false;
+// 	}
+
+// 	return true;
+// }
 
 // after each user logs in
 app.post("/loggedin", async (req: Request, res: Response) => {
@@ -206,7 +218,7 @@ app.get("/getEmail/:uid", async (req: Request, res: Response) => {
 });
 
 app.post("/createPost", async (req: Request, res: Response) => {
-	const { groupId, uid, name, title, content, files } = req.body;
+	const { groupId, uid, name, title, content, files, commentAccess } = req.body;
 
 	if (!await validateAdminRequest(groupId, uid, res)) return;
 
@@ -216,7 +228,8 @@ app.post("/createPost", async (req: Request, res: Response) => {
 		name: name,
 		title: title,
 		content: content,
-		files: files
+		files: files,
+		commentAccess: commentAccess
 	};
 	
 	const result = await db.collection("posts").insertOne(post);
@@ -226,7 +239,6 @@ app.post("/createPost", async (req: Request, res: Response) => {
 	let cachedPosts = await postRepo.search().where("groupId").equals(groupId).return.first();
 
 	if (cachedPosts) {
-		console.log("adding");
 		const finalPost = {
 			...post,
 			_id: String(result.insertedId)
@@ -262,13 +274,96 @@ app.delete("/deletePost/:groupId-:uid-:postId", async (req: Request, res: Respon
 
 	if (!await validateAdminRequest(groupId, uid, res)) return;
 
-	const result = await db.collection("posts").deleteOne({
+	let result = await db.collection("comments").deleteMany({
+		postId: postId
+	});
+
+	result = await db.collection("posts").deleteOne({
 		_id: new ObjectId(postId)
 	});
 
 	await postRepo.remove(postId);
 
 	res.status(200).send(result);
+});
+
+app.post("/createComment", async (req: Request, res: Response) => {
+	const { postId, uid, name, text, groupId } = req.body;
+
+	const group = await db.collection("groups").findOne({
+		_id: new ObjectId(String(groupId))
+	});
+	if (!group?.allMembers.includes(uid)) {
+		res.status(403).send("Action incomplete. You had been removed from the group.");
+		return;
+	}
+	const post = await db.collection("posts").findOne({
+		_id: new ObjectId(String(postId))
+	});
+
+	switch (post?.commentAccess) {		
+		case 1:
+			if (!group?.admins.includes(uid)) {
+				res.status(403).send("Settings changed to allow only admins to comment.");
+			}
+		case 2:
+			res.status(403).send("Settings changed to not allow anyone to comment.");
+			return;
+	}
+
+	const comment = {
+		postId: postId,
+		uid: uid,
+		name: name,
+		text: text
+	};
+
+	const result = await db.collection("comments").insertOne(comment);
+
+	res.status(200).send(result);
+});
+app.get("/getComments/:postId", async (req: Request, res: Response) => {
+	const { postId } = req.params;
+
+	const result = await db.collection("comments").find({
+		postId: postId
+	}).sort({ _id: -1}).toArray();
+
+	res.status(200).send(result);
+});
+app.get("/getCommentAccess/:postId", async (req: Request, res: Response) => {
+	const { postId } = req.params;
+
+	const result = await db.collection("posts").findOne({
+		_id: new ObjectId(String(postId))
+	});
+
+	res.status(200).send(String(result?.commentAccess));
+});
+app.patch("/updateCommentAccess/:groupId-:uid-:postId-:commentAccess", async (req: Request, res: Response) => {
+	const { groupId, uid, postId, commentAccess } = req.params;
+
+	if (!await validateAdminRequest(groupId, uid, res)) return;
+
+	const result = await db.collection("posts").updateOne({
+		_id: new ObjectId(postId)
+	}, {
+		$set: {
+			commentAccess: parseInt(commentAccess)
+		}
+	});
+
+	res.status(200).send(result);
+
+	// let cachedPosts = await postRepo.search().where("groupId").equals(groupId).return.first();
+	let cachedPost = await postRepo.fetch(postId);
+
+	if (cachedPost) {
+		cachedPost.commentAccess = parseInt(commentAccess);
+		postRepo.save(postId, {
+			...cachedPost,
+		});
+	}
 });
 
 app.listen(port, () => {

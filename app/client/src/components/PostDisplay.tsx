@@ -6,6 +6,8 @@ import type { Post } from "../types";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 
+import CommentForm from "./CommentForm";
+
 import Typography from "@mui/material/Typography";
 import IconButton from '@mui/material/IconButton';
 import CircularProgress from "@mui/material/CircularProgress";
@@ -24,6 +26,9 @@ export default function PostDisplay({ post, deletePost, groupId, amAdmin }: {
 	const [deleting, setDeleting] = useState(false);
 
 	const [commentModal, setCommentModal] = useState(false);
+	const [commentSettingsOpen, setCommentSettingsOpen] = useState(false);
+	const commentAccessMap = ["Allow All", "Allow Admins", "Don't Allow"];
+	const [commentAccess, setCommentAccess] = useState(post.commentAccess);
 
 	async function handleDelete() {
 		setDeleting(true);
@@ -46,9 +51,25 @@ export default function PostDisplay({ post, deletePost, groupId, amAdmin }: {
 			deletePost(post._id);
 		}
 	}
-
 	async function openComments() {
+		const result = await fetch(`http://localhost:6969/getCommentAccess/${post._id}`);
+
+		setCommentAccess(parseInt(await result.text()));
 		setCommentModal(true);
+	}
+	async function handleChangeCommentAccess(val: number) {
+		setCommentSettingsOpen(false);
+		setCommentAccess(val);
+		
+		const result = await fetch(`http://localhost:6969/updateCommentAccess/${groupId}-${auth.currentUser?.uid}-${post._id}-${val}`, {
+			method: "PATCH"
+		});
+
+		if (result.status === 403) {
+			navigate("/profile");
+			alert(await result.text());
+			return;
+		}
 	}
 
 	return (
@@ -77,11 +98,49 @@ export default function PostDisplay({ post, deletePost, groupId, amAdmin }: {
 					</div>)
 				})
 			}
-			<Button onClick={openComments} sx={{mt: 4}} variant="outlined" color="success">Comments</Button>
-			<Modal open={commentModal} onClose={() => setCommentModal(false)}>
-				<div>
-					
-				</div>
+
+			{
+				amAdmin ? (
+					<div className="grid grid-cols-[2fr_1fr] gap-[12px]">
+						<Button onClick={openComments} sx={{mt: 4}} variant="contained" color="success">Comments</Button>
+						<Button
+							onClick={() => setCommentSettingsOpen(true)}
+							sx={{mt: 4}}
+							size="small"
+							variant="contained"
+						>{commentAccessMap[commentAccess]}</Button>
+						<Modal open={commentSettingsOpen} onClose={() => setCommentSettingsOpen(false)}>
+							<div className="flex flex-col bg-white mt-[35vh] gap-[12px] p-[32px] m-[32px]">
+								<Button
+									onClick={() => {handleChangeCommentAccess(0)}}
+									variant={commentAccess === 0 ? "contained" : "outlined"}
+								>
+									Allow All
+								</Button>
+								<Button
+									onClick={() => {handleChangeCommentAccess(1);}}
+									variant={commentAccess === 1 ? "contained" : "outlined"}
+								>
+									Allow Admins
+								</Button>
+								<Button
+									onClick={() => {handleChangeCommentAccess(2);}}
+									variant={commentAccess === 2 ? "contained" : "outlined"}
+								>
+									Don't Allow
+								</Button>
+							</div>
+						</Modal>
+					</div>
+				) : (
+					<Button onClick={openComments} sx={{mt: 4}} variant="contained" color="success">Comments</Button>
+				)
+			}
+
+			<Modal sx={{overflow: "scroll"}} open={commentModal} onClose={() => setCommentModal(false)}>
+				<>
+					<CommentForm amAdmin={amAdmin} access={commentAccess} postId={post._id} groupId={groupId} handleClose={() => {setCommentModal(false)}} />
+				</>
 			</Modal>
 		</div>
 	);

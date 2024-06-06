@@ -13,6 +13,7 @@ export interface PostFile {
 
 export interface Comment {
 	_id: string,
+	postId: string,
 	uid: string,
 	name: string,
 	text: string
@@ -26,5 +27,5 @@ export interface Post {
 	title: string,
 	content: string,
 	files: PostFile[],
-	comments: Comment[]
+	commentAccess: number
 }

@@ -20,13 +20,6 @@ const redisClient = createClient({
         port: 15870
     }
 });
-const groupSchema = new Schema("group", {
-	_id: { type: "string" },
-	groupName: { type: "text" },
-	groupDesc: { type: "text" },
-	admins: { type: "string[]" },
-	allMembers: { type: "string[]" }
-});
 const postSchema = new Schema("post", {
 	_id: { type: "string" },
 	groupId: { type: "string" },
@@ -34,6 +27,7 @@ const postSchema = new Schema("post", {
 	name: { type: "text" },
 	title: { type: "text" },
 	content: { type: "text" },
+	commentAccess: { type: "number"},
 
 	fileNames: { type: "string[]", path: "$.files[*].name" },
 	fileUrls: { type: "string[]", path: "$.files[*].url" }
@@ -54,7 +48,6 @@ export let postRepo: Repository;
 
 	db = mongoClient.db("main");
 
-	groupRepo = new Repository(groupSchema, redisClient);
 	postRepo = new Repository(postSchema, redisClient);
 	await updateRedis();
 	setInterval(async () => await updateRedis(), 1000 * 3600); // reset redis cache every hour
@@ -84,7 +77,8 @@ async function updateRedis() {
 				name: String(post.name),
 				title: String(post.title),
 				content: String(post.content),
-				files: post.files
+				files: post.files,
+				commentAccess: post.commentAccess
 			}
 		});
 
