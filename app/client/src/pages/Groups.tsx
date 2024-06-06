@@ -12,10 +12,6 @@ import Typography from '@mui/material/Typography';
 import CreateGroupForm from '../components/CreateGroupForm';
 import JoinGroupCard from '../components/JoinGroupCard';
 
-// const intersectionObserver = new IntersectionObserver(() => {
-
-// });
-
 export default function Groups() {
 	const [user, loading, error] = useAuthState(auth);
 
@@ -24,7 +20,7 @@ export default function Groups() {
 
 	useEffect(() => {
 		async function fetchGroups() {
-			let result = await fetch(`http://localhost:6969/unjoinedGroups/${user?.uid || "X"}`);
+			let result = await fetch( `http://localhost:6969/unjoinedGroups/${user?.uid || ""}`);
 
 			setUnjoinedGroups(JSON.parse(await result.text()));
 		}

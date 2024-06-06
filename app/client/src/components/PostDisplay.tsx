@@ -9,6 +9,8 @@ import { useState } from "react";
 import Typography from "@mui/material/Typography";
 import IconButton from '@mui/material/IconButton';
 import CircularProgress from "@mui/material/CircularProgress";
+import Modal from "@mui/material/Modal";
+import Button from "@mui/material/Button";
 
 import DeleteIcon from '@mui/icons-material/Delete';
 
@@ -20,6 +22,8 @@ export default function PostDisplay({ post, deletePost, groupId, amAdmin }: {
 }) {
 	const navigate = useNavigate();
 	const [deleting, setDeleting] = useState(false);
+
+	const [commentModal, setCommentModal] = useState(false);
 
 	async function handleDelete() {
 		setDeleting(true);
@@ -41,6 +45,10 @@ export default function PostDisplay({ post, deletePost, groupId, amAdmin }: {
 		} else if (result.status === 200) {
 			deletePost(post._id);
 		}
+	}
+
+	async function openComments() {
+		setCommentModal(true);
 	}
 
 	return (
@@ -69,6 +77,12 @@ export default function PostDisplay({ post, deletePost, groupId, amAdmin }: {
 					</div>)
 				})
 			}
+			<Button onClick={openComments} sx={{mt: 4}} variant="outlined" color="success">Comments</Button>
+			<Modal open={commentModal} onClose={() => setCommentModal(false)}>
+				<div>
+					
+				</div>
+			</Modal>
 		</div>
 	);
 }

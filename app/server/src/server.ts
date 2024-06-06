@@ -3,7 +3,7 @@ import express, { Express, Request, Response } from "express";
 import cors from "cors";
 import { ObjectId } from 'mongodb';
 import type { PullOperator } from 'mongodb';
-import { db } from "./db/connection.js";
+import { db, postRepo } from "./db/connection.js";
 
 const app: Express = express();
 const port = process.env.port || 6969;
@@ -16,7 +16,6 @@ async function validateAdminRequest(groupId: string, requester: string, res: Res
 		_id: new ObjectId(String(groupId))
 	});
 
-	console.log(group?.admins, requester);
 	if (!group?.admins.includes(requester)) {
 		res.status(403).send("Action incomplete. You had been removed from the group.");
 		return false;
@@ -58,7 +57,10 @@ app.post("/createGroup", async (req: Request, res: Response) => {
 app.delete("/deleteGroup/:groupId", async (req: Request, res: Response) => {
 	const { groupId } = req.params;
 
-	const result = await db.collection("groups").deleteOne({
+	let result = await db.collection("posts").deleteMany({
+		groupId: groupId
+	});
+	result = await db.collection("groups").deleteOne({
 		_id: new ObjectId(groupId)
 	});
 
@@ -208,25 +210,52 @@ app.post("/createPost", async (req: Request, res: Response) => {
 
 	if (!await validateAdminRequest(groupId, uid, res)) return;
 
-	const result = await db.collection("posts").insertOne({
+	const post = {
 		groupId: groupId,
 		uid: uid,
 		name: name,
 		title: title,
 		content: content,
 		files: files
-	});
-
+	};
+	
+	const result = await db.collection("posts").insertOne(post);
+	
 	res.status(200).send(result);
+
+	let cachedPosts = await postRepo.search().where("groupId").equals(groupId).return.first();
+
+	if (cachedPosts) {
+		console.log("adding");
+		const finalPost = {
+			...post,
+			_id: String(result.insertedId)
+		};
+		postRepo.save(finalPost._id, finalPost);
+	}
 });
-app.get("/getPosts/:groupId", async (req: Request, res: Response) => {
-	const { groupId } = req.params;
+const postLLchunk = 3;
+app.get("/getPosts/:groupId-:skip", async (req: Request, res: Response) => {
+	const { groupId, skip } = req.params;
+	const seen = parseInt(skip);
 
-	const result = await db.collection("posts").find({
-		groupId: groupId
-	}).toArray();
+	if (!seen) {
+		const cachedPosts = await postRepo.search().where("groupId").equals(groupId).return.all();
+		if (cachedPosts.length) {
+			res.status(200).send(cachedPosts);
+			return;
+		}
 
-	res.status(200).send(result);
+		const result = await db.collection("posts").find({
+			groupId: groupId
+		}).sort({ _id: -1 }).limit(postLLchunk).toArray();
+		res.status(200).send(result);
+	} else {
+		const result = await db.collection("posts").find({
+			groupId: groupId
+		}).sort({ _id: -1 }).skip(seen).limit(postLLchunk).toArray();
+		res.status(200).send(result);
+	}
 });
 app.delete("/deletePost/:groupId-:uid-:postId", async (req: Request, res: Response) => {
 	const { groupId, uid, postId } = req.params;
@@ -236,6 +265,8 @@ app.delete("/deletePost/:groupId-:uid-:postId", async (req: Request, res: Respon
 	const result = await db.collection("posts").deleteOne({
 		_id: new ObjectId(postId)
 	});
+
+	await postRepo.remove(postId);
 
 	res.status(200).send(result);
 });

@@ -11,6 +11,13 @@ export interface PostFile {
 	url: string
 }
 
+export interface Comment {
+	_id: string,
+	uid: string,
+	name: string,
+	text: string
+}
+
 export interface Post {
 	_id: string,
 	groupId: string,
@@ -18,5 +25,6 @@ export interface Post {
 	name: string,
 	title: string,
 	content: string,
-	files: PostFile[]
+	files: PostFile[],
+	comments: Comment[]
 }

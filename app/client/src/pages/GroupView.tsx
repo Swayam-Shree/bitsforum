@@ -2,8 +2,8 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { auth, storage } from "../firebase";
 
 import { useParams, useNavigate } from "react-router-dom";
-
 import { useState, useEffect } from "react";
+import { InView } from "react-intersection-observer";
 
 import type { Group, Post, PostFile } from "../types";
 
@@ -49,9 +49,12 @@ export default function GroupView() {
 			const group = await result.json();
 			setGroupDetails(group);
 
-			result = await fetch(`http://localhost:6969/getPosts/${id}`);
-			const posts = await result.json();
-			setPosts(posts);
+			result = await fetch(`http://localhost:6969/getPosts/${id}-${posts.length}`);
+			const p = await result.json();
+			p.sort((a: Post, b: Post) => {
+				return a._id > b._id ? -1 : 1;
+			});
+			setPosts(p);
 		})();
 	}, []);
 
@@ -165,7 +168,10 @@ export default function GroupView() {
 				...tmpPost,
 				_id: JSON.parse(await result.text()).insertedId
 			} as Post;
-			setPosts(posts.concat(finalPost));
+
+			posts.unshift(finalPost)
+			setPosts(posts);
+
 			setPostTitle("");
 			setPostContent("");
 			setPostFiles([]);
@@ -285,14 +291,42 @@ export default function GroupView() {
 			</Modal>
 
 			{
-				posts.map((post) => {
-					return (<PostDisplay
-						key={post._id}
+				posts.map((post, index) => {
+					if (index === posts.length - 1) {
+						{/* @ts-ignore */}
+						return (<InView key={post._id}>
+							{
+								({inView, ref}: {inView: boolean, ref: any}) => {
+									if (inView) {
+										(async function loadMorePosts() {
+											const result = await fetch(`http://localhost:6969/getPosts/${id}-${posts.length}`);
+											const p = await result.json();
+											if (p.length) {
+												p.sort((a: Post, b: Post) => {
+													return a._id > b._id ? -1 : 1;
+												});
+												setPosts(posts.concat(p));
+											}
+										})();
+									}
+									return (<div ref={ref}>
+										<PostDisplay
+											post={post}
+											deletePost={deletePost}
+											groupId={id || ""}
+											amAdmin={groupDetails?.admins.includes(auth.currentUser?.uid || "") || false}
+										/>
+									</div>)
+								}
+							}
+						</InView>);
+					}
+					return (<div key={post._id}><PostDisplay
 						post={post}
 						deletePost={deletePost}
 						groupId={id || ""}
 						amAdmin={groupDetails?.admins.includes(auth.currentUser?.uid || "") || false}
-					/>);
+					/></div>);
 				})
 			}
 		</div>
