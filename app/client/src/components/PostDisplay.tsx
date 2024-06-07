@@ -89,10 +89,18 @@ export default function PostDisplay({ post, deletePost, groupId, amAdmin }: {
 					))
 				}
 			</div>
-			<Typography variant="h4">{ post.title }</Typography>
-			<Markdown remarkPlugins={[remarkGfm]}>
-				{ post.content }
-			</Markdown>
+			<Typography variant="h4">
+				<Markdown remarkPlugins={[remarkGfm]}>
+					{ post.title }
+				</Markdown>
+			</Typography>
+			
+			<div className="prose lg:prose-xl">
+				<Markdown remarkPlugins={[remarkGfm]}>
+					{ post.content }
+				</Markdown>
+			</div>
+
 			{
 				post.files.length !== 0 && <Typography variant="h6">Attachments:</Typography>
 			}

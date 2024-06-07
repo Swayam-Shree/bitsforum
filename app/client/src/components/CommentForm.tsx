@@ -9,6 +9,9 @@ import Typography from '@mui/material/Typography';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+
 export default function CommentForm({ amAdmin, access, postId, groupId, handleClose }:{
 	amAdmin: boolean,
 	access: number,
@@ -100,7 +103,11 @@ export default function CommentForm({ amAdmin, access, postId, groupId, handleCl
 					comments.map((comment) => {
 						return (<div key={comment._id} className="flex flex-col px-[12px] py-[4px] bg-gray-200 rounded">
 							<Typography variant="caption">{ comment.name + " >>" }</Typography>
-							<Typography variant="body1">{ comment.text }</Typography>
+							<div className="prose lg:prose-xl">
+								<Markdown remarkPlugins={[remarkGfm]}>
+									{ comment.text }
+								</Markdown>
+							</div>
 						</div>);
 					})
 				) : (

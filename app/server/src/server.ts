@@ -293,8 +293,8 @@ app.post("/createPost", async (req: Request, res: Response) => {
 	await nmTransporter.sendMail({
 		from: process.env.EMAIL,
 		bcc: emailString,
-		subject: `New Post. BITSForum. ${post.title}, in your group, ${group?.groupName}`,
-		text: `Check out the latest post in your BITSForum group right now and stay up to day. ${post.title} in group ${group?.groupName} by ${name}.`,
+		subject: `New Post. BITSForum. in your group, ${group?.groupName}`,
+		text: `Check out the latest post in your BITSForum group right now and stay up to day. Group ${group?.groupName} by ${name}.`,
 		// html: "<b>Hello world?</b>"
 	});
 });
@@ -375,7 +375,7 @@ app.post("/createComment", async (req: Request, res: Response) => {
 	res.status(200).send(result);
 
 	if (uid === post?.uid) return;
-	
+
 	const ownerEmail = await db.collection("users").findOne({
 		uid: post?.uid
 	});
@@ -383,8 +383,8 @@ app.post("/createComment", async (req: Request, res: Response) => {
 	await nmTransporter.sendMail({
 		from: process.env.EMAIL,
 		to: ownerEmail?.email,
-		subject: `New Comment. BITSForum. on your post ${post?.title}`,
-		text: `${name} commented on your post ${post?.title} in group ${group?.groupName}.`,
+		subject: `New Comment. BITSForum. on your post.`,
+		text: `${name} commented on your post in group ${group?.groupName}.`,
 	});
 });
 app.get("/getComments/:postId", async (req: Request, res: Response) => {
