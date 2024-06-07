@@ -8,7 +8,7 @@ import { google } from "googleapis";
 const nodemailer = require("nodemailer");
 
 const app: Express = express();
-const port = process.env.port || 6969;
+const port = process.env.PORT || 6969;
 
 app.use(cors({
 	origin: [
