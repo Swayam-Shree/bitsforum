@@ -4,12 +4,40 @@ import cors from "cors";
 import { ObjectId } from 'mongodb';
 import type { PullOperator } from 'mongodb';
 import { db, postRepo } from "./db/connection.js";
+import { google } from "googleapis";
+const nodemailer = require("nodemailer");
 
 const app: Express = express();
 const port = process.env.port || 6969;
 
 app.use(cors({ origin: "http://localhost:5173" }));
 app.use(express.json());
+
+let nmTransporter: any;
+(async function createNMTransporter() {
+	const oauth2Client = new google.auth.OAuth2(
+		process.env.CLIENT_ID,
+		process.env.CLIENT_SECRET,
+		"https://developers.google.com/oauthplayground"
+	);
+	oauth2Client.setCredentials({
+		refresh_token: process.env.REFRESH_TOKEN
+	});
+
+	nmTransporter = await nodemailer.createTransport({
+		service: "gmail",
+		auth: {
+			type: "OAuth2",
+			user: process.env.EMAIL,
+			accessToken: await oauth2Client.getAccessToken(),
+			clientId: process.env.CLIENT_ID,
+			clientSecret: process.env.CLIENT_SECRET,
+			refreshToken: process.env.REFRESH_TOKEN
+		}
+	});
+
+	console.log("email transporter ready");
+})();
 
 async function validateAdminRequest(groupId: string, requester: string, res: Response) {
 	const group = await db.collection("groups").findOne({
@@ -245,6 +273,30 @@ app.post("/createPost", async (req: Request, res: Response) => {
 		};
 		postRepo.save(finalPost._id, finalPost);
 	}
+
+	const group = await db.collection("groups").findOne({
+		_id: new ObjectId(String(groupId))
+	});
+	const members = group?.allMembers || [];
+	members.splice(members.indexOf(uid), 1);
+	const users = await db.collection("users").find({
+		uid: {
+			$in: members
+		}
+	}).toArray();
+	let emailString = "";
+	users.forEach(user => {
+		emailString += user.email + ", ";
+	});
+	emailString = emailString.slice(0, -2);
+
+	await nmTransporter.sendMail({
+		from: process.env.EMAIL,
+		bcc: emailString,
+		subject: `New Post. BITSForum. ${post.title}, in your group, ${group?.groupName}`,
+		text: `Check out the latest post in your BITSForum group right now and stay up to day. ${post.title} in group ${group?.groupName} by ${name}.`,
+		// html: "<b>Hello world?</b>"
+	});
 });
 const postLLchunk = 3;
 app.get("/getPosts/:groupId-:skip", async (req: Request, res: Response) => {
@@ -321,6 +373,19 @@ app.post("/createComment", async (req: Request, res: Response) => {
 	const result = await db.collection("comments").insertOne(comment);
 
 	res.status(200).send(result);
+
+	if (uid === post?.uid) return;
+	
+	const ownerEmail = await db.collection("users").findOne({
+		uid: post?.uid
+	});
+
+	await nmTransporter.sendMail({
+		from: process.env.EMAIL,
+		to: ownerEmail?.email,
+		subject: `New Comment. BITSForum. on your post ${post?.title}`,
+		text: `${name} commented on your post ${post?.title} in group ${group?.groupName}.`,
+	});
 });
 app.get("/getComments/:postId", async (req: Request, res: Response) => {
 	const { postId } = req.params;

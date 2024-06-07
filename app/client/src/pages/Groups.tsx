@@ -36,7 +36,8 @@ export default function Groups() {
 			auth.currentUser ? (<>
 				<Button
 					onClick={() => { setOpenCreateGroupModal(true); }}
-					variant="outlined"
+					variant="contained"
+					color="success"
 					sx={{my: 2}}
 				>
 					Create New Group

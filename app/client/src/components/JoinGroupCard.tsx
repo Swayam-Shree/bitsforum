@@ -22,7 +22,7 @@ export default function JoinGroupCard({ data }: { data: Group }) {
 
 		{
 			auth.currentUser ? (
-				<Button onClick={ handleJoin } variant="outlined">Join</Button>
+				<Button onClick={ handleJoin } variant="contained">Join</Button>
 			): (
 				<Typography className="text-red-700" variant="caption">
 					Please login to join groups

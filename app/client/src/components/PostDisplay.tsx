@@ -9,12 +9,15 @@ import { useState } from "react";
 import CommentForm from "./CommentForm";
 
 import Typography from "@mui/material/Typography";
-import IconButton from '@mui/material/IconButton';
+import IconButton from "@mui/material/IconButton";
 import CircularProgress from "@mui/material/CircularProgress";
 import Modal from "@mui/material/Modal";
 import Button from "@mui/material/Button";
 
-import DeleteIcon from '@mui/icons-material/Delete';
+import DeleteIcon from "@mui/icons-material/Delete";
+
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 export default function PostDisplay({ post, deletePost, groupId, amAdmin }: {
 	post: Post,
@@ -87,7 +90,9 @@ export default function PostDisplay({ post, deletePost, groupId, amAdmin }: {
 				}
 			</div>
 			<Typography variant="h4">{ post.title }</Typography>
-			<Typography variant="body1">{ post.content }</Typography>
+			<Markdown remarkPlugins={[remarkGfm]}>
+				{ post.content }
+			</Markdown>
 			{
 				post.files.length !== 0 && <Typography variant="h6">Attachments:</Typography>
 			}
