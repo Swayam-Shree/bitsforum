@@ -45,11 +45,11 @@ export default function GroupView() {
 
 	useEffect(() => {
 		(async function loadData() {
-			let result = await fetch(`http://localhost:6969/getGroup/${id}`);
+			let result = await fetch(import.meta.env.VITE_SERVER_ORIGIN + `/getGroup/${id}`);
 			const group = await result.json();
 			setGroupDetails(group);
 
-			result = await fetch(`http://localhost:6969/getPosts/${id}-${posts.length}`);
+			result = await fetch(import.meta.env.VITE_SERVER_ORIGIN + `/getPosts/${id}-${posts.length}`);
 			const p = await result.json();
 			p.sort((a: Post, b: Post) => {
 				return a._id > b._id ? -1 : 1;
@@ -59,7 +59,7 @@ export default function GroupView() {
 	}, []);
 
 	async function checkUserValidity() {
-		const result = await fetch(`http://localhost:6969/getGroup/${id}`);
+		const result = await fetch(import.meta.env.VITE_SERVER_ORIGIN + `/getGroup/${id}`);
 		const group = await result.json();
 
 		setGroupDetails(structuredClone(group));
@@ -74,7 +74,7 @@ export default function GroupView() {
 	}
 
 	async function handleAddUser() {
-		const result = await fetch(`http://localhost:6969/addUser`, {
+		const result = await fetch(import.meta.env.VITE_SERVER_ORIGIN + `:6969/addUser`, {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json"
@@ -151,7 +151,7 @@ export default function GroupView() {
 			commentAccess: 0 // default allow all users
 		}
 
-		const result = await fetch("http://localhost:6969/createPost", {
+		const result = await fetch(import.meta.env.VITE_SERVER_ORIGIN + "/createPost", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json"
@@ -300,7 +300,7 @@ export default function GroupView() {
 								({inView, ref}: {inView: boolean, ref: any}) => {
 									if (inView) {
 										(async () => {
-											const result = await fetch(`http://localhost:6969/getPosts/${id}-${posts.length}`);
+											const result = await fetch(import.meta.env.VITE_SERVER_ORIGIN + `/getPosts/${id}-${posts.length}`);
 											const p = await result.json();
 											const pids: string[] = [];
 											for (let pp of posts) pids.push(pp._id);

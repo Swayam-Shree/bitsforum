@@ -10,7 +10,13 @@ const nodemailer = require("nodemailer");
 const app: Express = express();
 const port = process.env.port || 6969;
 
-app.use(cors({ origin: "http://localhost:5173" }));
+app.use(cors({
+	origin: [
+		"http://localhost:5173",
+		"https://bitsforum.vercel.app",
+		"https://bitsforum-swayam-shrees-projects.vercel.app"
+	]
+}));
 app.use(express.json());
 
 let nmTransporter: any;
@@ -36,6 +42,10 @@ let nmTransporter: any;
 		}
 	});
 
+	setInterval(async () => {
+		nmTransporter.auth.accessToken = await oauth2Client.getAccessToken();
+	}, 1000 * 3500); // accessToken expires every hour
+
 	console.log("email transporter ready");
 })();
 
@@ -51,6 +61,16 @@ async function validateAdminRequest(groupId: string, requester: string, res: Res
 
 	return true;
 }
+
+// health check for render
+app.get("/healthz", (req: Request, res: Response) => {
+	res.status(200).send("OK");
+});
+
+app.get("/", (req: Request, res: Response) => {
+	res.send("Welcome to BITSForum server");
+});
+
 // async function validateUserRequest(groupId: string, requester: string, res: Response) {
 // 	const group = await db.collection("groups").findOne({
 // 		_id: new ObjectId(String(groupId))

@@ -22,14 +22,14 @@ export default function ManageUserTile({ uid, isAdmin, groupId, amAdmin, updateG
 
 	useEffect(() => {
 		async function fetchData() {
-			const result = await fetch(`http://localhost:6969/getEmail/${uid}`);
+			const result = await fetch(import.meta.env.VITE_SERVER_ORIGIN + `/getEmail/${uid}`);
 			setEmail(await result.text());
 		}
 		fetchData();
 	}, []);
 
 	async function handleAdmin() {
-		const result = await fetch(`http://localhost:6969/makeAdmin/${groupId}-${uid}-${auth.currentUser?.uid}`, {
+		const result = await fetch(import.meta.env.VITE_SERVER_ORIGIN + `/makeAdmin/${groupId}-${uid}-${auth.currentUser?.uid}`, {
 			method: "POST"
 		});
 
@@ -43,7 +43,7 @@ export default function ManageUserTile({ uid, isAdmin, groupId, amAdmin, updateG
 		}
 	}
 	async function handleRemove() {
-		const result = await fetch(`http://localhost:6969/removeUser/${groupId}-${uid}-${auth.currentUser?.uid}`, {
+		const result = await fetch(import.meta.env.VITE_SERVER_ORIGIN + `/removeUser/${groupId}-${uid}-${auth.currentUser?.uid}`, {
 			method: "DELETE"
 		});
 

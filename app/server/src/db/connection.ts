@@ -4,7 +4,6 @@ import { Db, ObjectId } from "mongodb";
 import { createClient } from "redis";
 import { Schema, Repository } from "redis-om"
 
-
 const mongoClient = new MongoClient(process.env.MONGO_URI || "", {
 	serverApi: {
 		version: ServerApiVersion.v1,

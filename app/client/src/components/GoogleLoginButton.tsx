@@ -12,7 +12,7 @@ export default function GoogleLoginButton() {
 
 	async function handleLogin() {
 		await signInWithPopup(auth, provider);
-		await fetch(`http://localhost:6969/loggedin`, {
+		await fetch(import.meta.env.VITE_SERVER_ORIGIN + `/loggedin`, {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json"

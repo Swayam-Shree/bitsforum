@@ -41,7 +41,7 @@ export default function PostDisplay({ post, deletePost, groupId, amAdmin }: {
 			await deleteObject(fileRef);
 		}
 		
-		const result = await fetch(`http://localhost:6969/deletePost/${groupId}-${auth.currentUser?.uid}-${post._id}`, {
+		const result = await fetch(import.meta.env.VITE_SERVER_ORIGIN + `/deletePost/${groupId}-${auth.currentUser?.uid}-${post._id}`, {
 			method: "DELETE"
 		});
 
@@ -55,7 +55,7 @@ export default function PostDisplay({ post, deletePost, groupId, amAdmin }: {
 		}
 	}
 	async function openComments() {
-		const result = await fetch(`http://localhost:6969/getCommentAccess/${post._id}`);
+		const result = await fetch(import.meta.env.VITE_SERVER_ORIGIN + `/getCommentAccess/${post._id}`);
 
 		setCommentAccess(parseInt(await result.text()));
 		setCommentModal(true);
@@ -64,7 +64,7 @@ export default function PostDisplay({ post, deletePost, groupId, amAdmin }: {
 		setCommentSettingsOpen(false);
 		setCommentAccess(val);
 		
-		const result = await fetch(`http://localhost:6969/updateCommentAccess/${groupId}-${auth.currentUser?.uid}-${post._id}-${val}`, {
+		const result = await fetch(import.meta.env.VITE_SERVER_ORIGIN + `/updateCommentAccess/${groupId}-${auth.currentUser?.uid}-${post._id}-${val}`, {
 			method: "PATCH"
 		});
 

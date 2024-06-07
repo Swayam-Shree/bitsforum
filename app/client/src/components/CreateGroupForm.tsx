@@ -18,7 +18,7 @@ export default function CreateGroupForm(){
 
 		if (!groupName || !groupDesc) return;
 		
-		await fetch("http://localhost:6969/createGroup", {
+		await fetch(import.meta.env.VITE_SERVER_ORIGIN + "/createGroup", {
 			method: "POST",
 			body: JSON.stringify({
 				uid: auth.currentUser?.uid,

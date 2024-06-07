@@ -29,7 +29,7 @@ export default function CommentForm({ amAdmin, access, postId, groupId, handleCl
 
 	useEffect(() => {
 		(async () => {
-			const result = await fetch(`http://localhost:6969/getComments/${postId}`);
+			const result = await fetch(import.meta.env.VITE_SERVER_ORIGIN + `/getComments/${postId}`);
 			const comments = await result.json();
 
 			setComments(comments);
@@ -50,7 +50,7 @@ export default function CommentForm({ amAdmin, access, postId, groupId, handleCl
 			text: text,
 			groupId: groupId
 		};
-		const result = await fetch("http://localhost:6969/createComment", {
+		const result = await fetch(import.meta.env.VITE_SERVER_ORIGIN + "/createComment", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json"

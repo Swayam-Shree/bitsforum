@@ -23,7 +23,7 @@ export default function JoinGroupCard({ data }: { data: Group }) {
 			return;
 		}
 
-		fetch(`http://localhost:6969/leaveGroup/${data._id}-${auth.currentUser?.uid}`, {
+		fetch(import.meta.env.VITE_SERVER_ORIGIN + `/leaveGroup/${data._id}-${auth.currentUser?.uid}`, {
 			method: "DELETE"
 		});
 
@@ -32,7 +32,7 @@ export default function JoinGroupCard({ data }: { data: Group }) {
 	async function handleDelete() {
 		setLastAdminWarning(false);
 
-		fetch(`http://localhost:6969/deleteGroup/${data._id}`, {
+		fetch(import.meta.env.VITE_SERVER_ORIGIN + `/deleteGroup/${data._id}`, {
 			method: "DELETE"
 		});
 

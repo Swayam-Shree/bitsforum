@@ -11,7 +11,7 @@ export default function JoinGroupCard({ data }: { data: Group }) {
 	const navigate = useNavigate();
 
 	async function handleJoin() {
-		await fetch(`http://localhost:6969/joinGroup/${ data._id }-${ auth.currentUser?.uid }`);
+		await fetch(import.meta.env.VITE_SERVER_ORIGIN + `/joinGroup/${ data._id }-${ auth.currentUser?.uid }`);
 
 		navigate("/profile");
 	}

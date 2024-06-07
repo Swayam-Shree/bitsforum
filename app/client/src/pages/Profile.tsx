@@ -17,7 +17,7 @@ export default function Profile() {
 
 	useEffect(() => {
 		async function fetchGroups() {
-			const result = await fetch(`http://localhost:6969/joinedGroups/${user?.uid}`);
+			const result = await fetch(import.meta.env.VITE_SERVER_ORIGIN + `/joinedGroups/${user?.uid}`);
 
 			const groups = JSON.parse(await result.text());
 			setAdminGroups(groups.filter((group: Group) => group.admins.includes(user?.uid || "")));
