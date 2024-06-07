@@ -16,8 +16,12 @@ const redisClient = createClient({
     password: process.env.REDIS_CLIENT_PASSWORD,
     socket: {
         host: "redis-15870.c264.ap-south-1-1.ec2.redns.redis-cloud.com",
-        port: 15870
+        port: 15870,
+		connectTimeout: 60000
     }
+});
+redisClient.on("error", error => {
+	console.error("redis client error: ", error);
 });
 const postSchema = new Schema("post", {
 	_id: { type: "string" },
