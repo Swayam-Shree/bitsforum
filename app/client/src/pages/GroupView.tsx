@@ -293,48 +293,52 @@ export default function GroupView() {
 			</Modal>
 
 			{
-				posts.map((post, index) => {
-					if (index === posts.length - 1) {
-						return (<InView key={post._id}>
-							{
-								({inView, ref}: {inView: boolean, ref: any}) => {
-									if (inView) {
-										(async () => {
-											const result = await fetch(import.meta.env.VITE_SERVER_ORIGIN + `/getPosts/${id}-${posts.length}`);
-											const p = await result.json();
-											const pids: string[] = [];
-											for (let pp of posts) pids.push(pp._id);
-											
-											if (p.length && !pids.includes(p[0]._id)) {
-												p.sort((a: Post, b: Post) => {
-													return a._id > b._id ? -1 : 1;
-												});
-												setPosts(posts.concat(p));
-											}
-										})();
+				posts.length ? (
+					posts.map((post, index) => {
+						if (index === posts.length - 1) {
+							return (<InView key={post._id}>
+								{
+									({inView, ref}: {inView: boolean, ref: any}) => {
+										if (inView) {
+											(async () => {
+												const result = await fetch(import.meta.env.VITE_SERVER_ORIGIN + `/getPosts/${id}-${posts.length}`);
+												const p = await result.json();
+												const pids: string[] = [];
+												for (let pp of posts) pids.push(pp._id);
+												
+												if (p.length && !pids.includes(p[0]._id)) {
+													p.sort((a: Post, b: Post) => {
+														return a._id > b._id ? -1 : 1;
+													});
+													setPosts(posts.concat(p));
+												}
+											})();
+										}
+										return (<div ref={ref}>
+											<PostDisplay
+												post={post}
+												deletePost={deletePost}
+												groupId={id || ""}
+												amAdmin={groupDetails?.admins.includes(auth.currentUser?.uid || "") || false}
+											/>
+										</div>);
 									}
-									return (<div ref={ref}>
-										<PostDisplay
-											post={post}
-											deletePost={deletePost}
-											groupId={id || ""}
-											amAdmin={groupDetails?.admins.includes(auth.currentUser?.uid || "") || false}
-										/>
-									</div>)
 								}
-							}
-						</InView>);
-					} else {
-						return (<div key={post._id}>
-							<PostDisplay
-								post={post}
-								deletePost={deletePost}
-								groupId={id || ""}
-								amAdmin={groupDetails?.admins.includes(auth.currentUser?.uid || "") || false}
-							/>
-						</div>);
-					}
-				})
+							</InView>);
+						} else {
+							return (<div key={post._id}>
+								<PostDisplay
+									post={post}
+									deletePost={deletePost}
+									groupId={id || ""}
+									amAdmin={groupDetails?.admins.includes(auth.currentUser?.uid || "") || false}
+								/>
+							</div>);
+						}
+					})
+				) : (
+					<Typography variant="h6">No posts yet. Create one.</Typography>
+				)
 			}
 		</div>
 	</div>);

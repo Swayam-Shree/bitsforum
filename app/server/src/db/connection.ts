@@ -35,10 +35,17 @@ const postSchema = new Schema("post", {
 	fileNames: { type: "string[]", path: "$.files[*].name" },
 	fileUrls: { type: "string[]", path: "$.files[*].url" }
 });
+const commentSchema = new Schema("comment", {
+	_id: { type: "string" },
+	postId: { type: "string" },
+	uid: { type: "string" },
+	name: { type: "text" },
+	text: { type: "text" }
+});
 
 export let db: Db;
-export let groupRepo: Repository;
 export let postRepo: Repository;
+export let commentRepo: Repository;
 
 (async function run() {
 	await Promise.all([
@@ -52,28 +59,55 @@ export let postRepo: Repository;
 	db = mongoClient.db("main");
 
 	postRepo = new Repository(postSchema, redisClient);
+	commentRepo = new Repository(commentSchema, redisClient);
 	await updateRedis();
-	setInterval(async () => await updateRedis(), 1000 * 3600); // reset redis cache every hour
+	setInterval(async () => await updateRedis(), 1000 * 1800); // reset redis cache every hour
 })();
 
-//caching latest 10 posts of top 10 groups with largest number of members
+//caching latest posts of top groups with largest number of members
+const topGroupCount = 10;
+const latestPostCount = 5;
+const latestCommentCount = 10;
 async function updateRedis() {
 	await redisClient.flushAll();
 
 	await postRepo.createIndex();
+	await commentRepo.createIndex();
 
 	let groups = await db.collection("groups").find().toArray();
 	groups = groups.sort((a, b) => {
 		return a.allMembers.length > b.allMembers.length ? -1 : 1;
-	}).slice(0, 10);
+	}).slice(0, topGroupCount);
 
 	for (let group of groups) {
 		const posts = await db.collection("posts").find({
 			groupId: String(group._id)
 		}).sort({ _id: -1 }).toArray();
-		const newPosts = posts.slice(0, 3);
-		const finalPosts = newPosts.map((post) => {
-			return {
+
+		const newPosts = posts.slice(0, latestPostCount);
+		const finalPosts = [];
+
+		for (let post of newPosts) {
+			const comments = await db.collection("comments").find({
+				postId: String(post._id)
+			}).sort({ _id: -1 }).toArray();
+
+			const newComments = comments.slice(0, latestCommentCount);
+			const finalComments = newComments.map((comment) => {
+				return { // to convert ObjectId to string
+					_id: String(comment._id),
+					postId: String(comment.postId),
+					uid: String(comment.uid),
+					name: String(comment.name),
+					text: String(comment.text)
+				};
+			});
+
+			for (let comment of finalComments) {
+				await commentRepo.save(comment._id, comment);
+			}
+
+			finalPosts.push({ // to convert ObjectId to string
 				_id: String(post._id),
 				groupId: String(post.groupId),
 				uid: String(post.uid),
@@ -82,8 +116,8 @@ async function updateRedis() {
 				content: String(post.content),
 				files: post.files,
 				commentAccess: post.commentAccess
-			}
-		});
+			});
+		}
 
 		for (let post of finalPosts) {
 			await postRepo.save(post._id, post);

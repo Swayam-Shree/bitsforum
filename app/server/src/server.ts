@@ -3,7 +3,7 @@ import express, { Express, Request, Response } from "express";
 import cors from "cors";
 import { ObjectId } from 'mongodb';
 import type { PullOperator } from 'mongodb';
-import { db, postRepo } from "./db/connection.js";
+import { db, postRepo, commentRepo } from "./db/connection.js";
 import { google } from "googleapis";
 import { Server, Socket } from "socket.io";
 
@@ -406,6 +406,12 @@ app.post("/createComment", async (req: Request, res: Response) => {
 
 	res.status(200).send(result);
 
+	const finalComment = {
+		...comment,
+		_id: String(result.insertedId)
+	};
+	commentRepo.save(finalComment._id, finalComment);
+
 	if (uid === post?.uid) return;
 
 	const socket = getSocketFromUid(post?.uid);
@@ -425,14 +431,28 @@ app.post("/createComment", async (req: Request, res: Response) => {
 		text: `${name} commented on your post in group ${group?.groupName}.`,
 	});
 });
-app.get("/getComments/:postId", async (req: Request, res: Response) => {
-	const { postId } = req.params;
+const commentLLchunk = 5;
+app.get("/getComments/:postId-:skip", async (req: Request, res: Response) => {
+	const { postId, skip } = req.params;
+	const seen = parseInt(skip);
 
-	const result = await db.collection("comments").find({
-		postId: postId
-	}).sort({ _id: -1}).toArray();
+	if (!seen) {
+		const cachedComments = await commentRepo.search().where("postId").equals(postId).return.all();
+		if (cachedComments.length) {
+			res.status(200).send(cachedComments);
+			return;
+		}
 
-	res.status(200).send(result);
+		const result = await db.collection("comments").find({
+			postId: postId
+		}).sort({ _id: -1}).limit(commentLLchunk).toArray();
+		res.status(200).send(result);
+	} else {
+		const result = await db.collection("comments").find({
+			postId: postId
+		}).sort({ _id: -1}).skip(seen).limit(commentLLchunk).toArray();
+		res.status(200).send(result);
+	}
 });
 app.get("/getCommentAccess/:postId", async (req: Request, res: Response) => {
 	const { postId } = req.params;

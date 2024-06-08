@@ -2,6 +2,7 @@ import { auth } from '../firebase';
 
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import { InView } from "react-intersection-observer";
 
 import type { Comment } from '../types';
 
@@ -29,10 +30,13 @@ export default function CommentForm({ amAdmin, access, postId, groupId, handleCl
 
 	useEffect(() => {
 		(async () => {
-			const result = await fetch(import.meta.env.VITE_SERVER_ORIGIN + `/getComments/${postId}`);
-			const comments = await result.json();
+			const result = await fetch(import.meta.env.VITE_SERVER_ORIGIN + `/getComments/${postId}-${comments.length}`);
 
-			setComments(comments);
+			const c = await result.json();
+			c.sort((a: Comment, b: Comment) => {
+				return a._id > b._id ? -1 : 1;
+			});
+			setComments(c);
 		})();
 	}, []);
 
@@ -100,15 +104,47 @@ export default function CommentForm({ amAdmin, access, postId, groupId, handleCl
 		<div className="flex flex-col gap-[12px]">
 			{
 				comments.length ? (
-					comments.map((comment) => {
-						return (<div key={comment._id} className="flex flex-col px-[12px] py-[4px] bg-gray-200 rounded">
-							<Typography variant="caption">{ comment.name + " >>" }</Typography>
-							<div className="prose lg:prose-xl">
-								<Markdown remarkPlugins={[remarkGfm]}>
-									{ comment.text }
-								</Markdown>
-							</div>
-						</div>);
+					comments.map((comment, index) => {
+						if (index === comments.length - 1) {
+							return (<InView key={comment._id}>
+								{
+									({inView, ref}: {inView: boolean, ref: any}) => {
+										if (inView) {
+											(async () => {
+												const result = await fetch(import.meta.env.VITE_SERVER_ORIGIN + `/getComments/${postId}-${comments.length}`);
+												const c = await result.json();
+												const cids: string[] = [];
+												for (let cc of comments) cids.push(cc._id);
+												
+												if (c.length && !cids.includes(c[0]._id)) {
+													c.sort((a: Comment, b: Comment) => {
+														return a._id > b._id ? -1 : 1;
+													});
+													setComments(comments.concat(c));
+												}
+											})();
+										}
+										return (<div ref={ref} className="flex flex-col px-[12px] py-[4px] bg-gray-200 rounded">
+											<Typography variant="caption">{ comment.name + " >>" }</Typography>
+											<div className="prose lg:prose-xl">
+												<Markdown remarkPlugins={[remarkGfm]}>
+													{ comment.text }
+												</Markdown>
+											</div>
+										</div>);
+									}
+								}
+							</InView>);
+						} else {
+							return (<div key={comment._id} className="flex flex-col px-[12px] py-[4px] bg-gray-200 rounded">
+								<Typography variant="caption">{ comment.name + " >>" }</Typography>
+								<div className="prose lg:prose-xl">
+									<Markdown remarkPlugins={[remarkGfm]}>
+										{ comment.text }
+									</Markdown>
+								</div>
+							</div>);
+						}
 					})
 				) : (
 					<Typography variant="h6">No Comments Yet</Typography>
