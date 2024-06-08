@@ -5,18 +5,20 @@ import { ObjectId } from 'mongodb';
 import type { PullOperator } from 'mongodb';
 import { db, postRepo } from "./db/connection.js";
 import { google } from "googleapis";
+import { Server, Socket } from "socket.io";
+
 const nodemailer = require("nodemailer");
 
 const app: Express = express();
 const port = process.env.PORT || 6969;
 
-app.use(cors({
-	origin: [
-		"http://localhost:5173",
-		"https://bitsforum.vercel.app",
-		"https://bitsforum-swayam-shrees-projects.vercel.app"
-	]
-}));
+const origins = [
+	"http://localhost:5173",
+	"https://bitsforum.vercel.app",
+	"https://bitsforum-swayam-shrees-projects.vercel.app"
+]
+
+app.use(cors({ origin: origins }));
 app.use(express.json());
 
 let nmTransporter: any;
@@ -41,10 +43,6 @@ let nmTransporter: any;
 			refreshToken: process.env.REFRESH_TOKEN
 		}
 	});
-
-	setInterval(async () => {
-		nmTransporter.auth.accessToken = await oauth2Client.getAccessToken();
-	}, 1000 * 3500); // accessToken expires every hour
 
 	console.log("email transporter ready");
 })();
@@ -299,11 +297,25 @@ app.post("/createPost", async (req: Request, res: Response) => {
 	});
 	const members = group?.allMembers || [];
 	members.splice(members.indexOf(uid), 1);
+
+	const offlineUsers = [];
+	for (let member of members) {
+		const socket = getSocketFromUid(member);
+		if (socket) {
+			socket.emit("notification", `New post in group: ${group?.groupName}`);
+		} else {
+			offlineUsers.push(member);
+		}
+	}
+	
 	const users = await db.collection("users").find({
 		uid: {
-			$in: members
+			$in: offlineUsers
 		}
 	}).toArray();
+
+	if (!users.length) return;
+
 	let emailString = "";
 	users.forEach(user => {
 		emailString += user.email + ", ";
@@ -396,6 +408,12 @@ app.post("/createComment", async (req: Request, res: Response) => {
 
 	if (uid === post?.uid) return;
 
+	const socket = getSocketFromUid(post?.uid);
+	if (socket) {
+		socket.emit("notification", `${name} - commented on your post in group: ${group?.groupName}`);
+		return;
+	}
+
 	const ownerEmail = await db.collection("users").findOne({
 		uid: post?.uid
 	});
@@ -451,6 +469,44 @@ app.patch("/updateCommentAccess/:groupId-:uid-:postId-:commentAccess", async (re
 	}
 });
 
-app.listen(port, () => {
+const server = app.listen(port, () => {
 	console.log(`app listening on port ${port}`);
 });
+
+const io = new Server(server, {
+	cors: {
+		origin: origins
+	}
+});
+console.log("socket initialized");
+
+const sockets: { uid: string, socket: Socket }[] = [];
+
+io.on("connection", (socket) => {
+	console.log(`socket connected: ${socket.id}`);
+	socket.emit("notification", "Welcome to BITSForum");
+
+	socket.on("addUser", (uid) => {
+		sockets.push({ uid, socket });
+	});
+
+	socket.on("disconnect", () => {
+		console.log(`socket disconnected: ${socket.id}`);
+		for (let i = 0; i < sockets.length; ++i) {
+			let s = sockets[i];
+			if (s.socket.id === socket.id) {
+				sockets.splice(i, 1);
+				break;
+			}
+		}
+	});
+});
+
+function getSocketFromUid(uid: string) {
+	for (let s of sockets) {
+		if (s.uid === uid) {
+			return s.socket;
+		}
+	}
+	return null;
+}
