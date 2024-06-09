@@ -322,12 +322,17 @@ app.post("/createPost", async (req: Request, res: Response) => {
 	});
 	emailString = emailString.slice(0, -2);
 
+	const groupUrl = req.get("origin") + "/group/" + groupId;
+
 	await nmTransporter.sendMail({
 		from: process.env.EMAIL,
 		bcc: emailString,
 		subject: `New Post. BITSForum. in your group, ${group?.groupName}`,
-		text: `Check out the latest post in your BITSForum group right now and stay up to day. Group ${group?.groupName} by ${name}.`,
-		// html: "<b>Hello world?</b>"
+		html: `
+			<p>New post in your BITSForum group ${group?.groupName} by ${name}</p>
+			<br>
+			<a href=${groupUrl}>Click here to view</a>
+		`
 	});
 });
 const postLLchunk = 3;
@@ -424,11 +429,18 @@ app.post("/createComment", async (req: Request, res: Response) => {
 		uid: post?.uid
 	});
 
+	const groupUrl = req.get("origin") + "/group/" + groupId;
+
 	await nmTransporter.sendMail({
 		from: process.env.EMAIL,
 		to: ownerEmail?.email,
 		subject: `New Comment. BITSForum. on your post.`,
 		text: `${name} commented on your post in group ${group?.groupName}.`,
+		html: `
+			<p>${name} commented on your post in group ${group?.groupName}</p>
+			<br>
+			<a href=${groupUrl}>Click here to view your group</a>
+		`
 	});
 });
 const commentLLchunk = 5;

@@ -1,8 +1,6 @@
 import { auth } from '../firebase';
 import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 
-import { useNavigate } from 'react-router-dom';
-
 import Button from '@mui/material/Button';
 
 const provider = new GoogleAuthProvider();
