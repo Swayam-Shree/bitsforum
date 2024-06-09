@@ -17,6 +17,9 @@ const origins = [
 	"https://bitsforum.vercel.app",
 	"https://bitsforum-swayam-shrees-projects.vercel.app"
 ]
+if (process.env.EXTRA_ORIGIN) {
+	origins.push(process.env.EXTRA_ORIGIN);
+}
 
 app.use(cors({ origin: origins }));
 app.use(express.json());

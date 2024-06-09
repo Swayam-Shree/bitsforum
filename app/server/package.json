@@ -4,7 +4,7 @@
   "description": "",
   "main": "dist/index.js",
   "scripts": {
-    "build": "npm i && npx tsc",
+    "build": "npx tsc",
     "start": "node dist/server.js",
     "dev": "npx tsx watch src/server.ts"
   },
