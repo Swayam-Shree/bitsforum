@@ -86,6 +86,11 @@ app.get("/", (req: Request, res: Response) => {
 app.post("/loggedin", async (req: Request, res: Response) => {
 	const { uid, email } = req.body;
 
+	if (!email.endsWith("bits-pilani.ac.in")) {
+		res.status(403).send("Please login with your BITS mail");
+		return;
+	}
+
 	const result = await db.collection("users").updateOne({
 		uid: uid
 	}, {
