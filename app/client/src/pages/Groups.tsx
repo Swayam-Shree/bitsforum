@@ -20,13 +20,13 @@ export default function Groups() {
 
 	useEffect(() => {
 		async function fetchGroups() {
-			let result = await fetch(import.meta.env.VITE_SERVER_ORIGIN + `/unjoinedGroups/${user?.uid || ""}`);
+			let result = await fetch(import.meta.env.VITE_SERVER_ORIGIN + `/unjoinedGroups/${user?.uid || "^"}`);
 
 			setUnjoinedGroups(JSON.parse(await result.text()));
 		}
-
+		
 		fetchGroups();
-	}, []);
+	}, [user]);
 
 	if (loading) return <div>Loading...</div>;
 	if (error) return <div>Error</div>;

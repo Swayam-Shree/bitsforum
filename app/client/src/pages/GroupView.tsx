@@ -1,5 +1,6 @@
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { auth, storage } from "../firebase";
+import { useAuthState } from 'react-firebase-hooks/auth';
 
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -20,6 +21,8 @@ import AttachFileIcon from '@mui/icons-material/AttachFile';
 
 export default function GroupView() {
 	const { id } = useParams();
+
+	const [user, loading, error] = useAuthState(auth);
 
 	const [manageUserModal, setManageUserModal] = useState(false);
 	const [postModal, setPostModal] = useState(false);
@@ -45,6 +48,13 @@ export default function GroupView() {
 
 	useEffect(() => {
 		(async function loadData() {
+			if (loading) {
+				return;
+			} else if (!user) {
+				navigate("/profile");
+				return;
+			}
+			
 			let result = await fetch(import.meta.env.VITE_SERVER_ORIGIN + `/getGroup/${id}`);
 			const group = await result.json();
 			setGroupDetails(group);
@@ -56,7 +66,7 @@ export default function GroupView() {
 			});
 			setPosts(p);
 		})();
-	}, []);
+	}, [user, loading]);
 
 	async function checkUserValidity() {
 		const result = await fetch(import.meta.env.VITE_SERVER_ORIGIN + `/getGroup/${id}`);
@@ -74,7 +84,7 @@ export default function GroupView() {
 	}
 
 	async function handleAddUser() {
-		const result = await fetch(import.meta.env.VITE_SERVER_ORIGIN + `:6969/addUser`, {
+		const result = await fetch(import.meta.env.VITE_SERVER_ORIGIN + `/addUser`, {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json"
@@ -187,6 +197,9 @@ export default function GroupView() {
 	function deletePost(postId: string) {
 		setPosts(posts.filter((post) => post._id !== postId));
 	}
+
+	if (loading) return <div>Loading...</div>;
+	if (error) return <div>Error</div>;
 
 	return (<div>
 		<div className="flex flex-col items-center gap-[20px] m-[20px] p-[20px] border-solid border-[1px] rounded border-violet-800">

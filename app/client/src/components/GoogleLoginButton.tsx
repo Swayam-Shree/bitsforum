@@ -8,8 +8,6 @@ import Button from '@mui/material/Button';
 const provider = new GoogleAuthProvider();
 
 export default function GoogleLoginButton() {
-	const navigate = useNavigate();
-
 	async function handleLogin() {
 		await signInWithPopup(auth, provider);
 		await fetch(import.meta.env.VITE_SERVER_ORIGIN + `/loggedin`, {
@@ -22,7 +20,6 @@ export default function GoogleLoginButton() {
 				email: auth.currentUser?.email,
 			})
 		});
-		navigate("/");
 	}
 
 	return (<div>
