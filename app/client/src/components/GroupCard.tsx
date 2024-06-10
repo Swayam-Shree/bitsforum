@@ -32,7 +32,7 @@ export default function JoinGroupCard({ data }: { data: Group }) {
 	async function handleDelete() {
 		setLastAdminWarning(false);
 
-		fetch(import.meta.env.VITE_SERVER_ORIGIN + `/deleteGroup/${data._id}`, {
+		fetch(import.meta.env.VITE_SERVER_ORIGIN + `/deleteGroup/${data._id}-${auth.currentUser?.uid}`, {
 			method: "DELETE"
 		});
 

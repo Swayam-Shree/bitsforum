@@ -57,7 +57,8 @@ export default function Groups() {
 		
 		{
 			unjoinedGroups.length > 0 ? (
-				<div className="flex flex-col gap-[20px] my-[20px]">
+				<div className="flex flex-col items-center gap-[20px] my-[20px]">
+					<Typography variant="h4">Unjoined Groups</Typography>
 					{
 						unjoinedGroups.map((group: Group) => {
 							return <JoinGroupCard data={ group } key={ group._id } />;

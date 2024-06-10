@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
+import Snackbar from '@mui/material/Snackbar';
 
 export default function CreateGroupForm(){
 	const [groupName, setGroupName] = useState("");
@@ -11,6 +12,8 @@ export default function CreateGroupForm(){
 
 	const [groupNameError, setGroupNameError] = useState(false);
 	const [groupDescError, setGroupDescError] = useState(false);
+
+	const [notifOpen, setNotifOpen] = useState(false);
 
 	async function handleSubmit() {
 		setGroupNameError(!groupName);
@@ -32,6 +35,7 @@ export default function CreateGroupForm(){
 		
 		setGroupName("");
 		setGroupDesc("");
+		setNotifOpen(true);
 	}
 
 	return (<div className="bg-white flex flex-col items-center gap-[16px] my-[30vh] mx-[5vw] p-[16px] rounded min-w-[300px]">
@@ -57,5 +61,11 @@ export default function CreateGroupForm(){
 			inputProps={{ maxLength: 256 }}
 		/>
 		<Button onClick={handleSubmit} variant="contained">Create Group</Button>
+		<Snackbar 
+			open={notifOpen}
+			autoHideDuration={4000}
+			message="Group created successfully!"
+			onClose={ () => setNotifOpen(false) }
+		/>
 	</div>);
 }

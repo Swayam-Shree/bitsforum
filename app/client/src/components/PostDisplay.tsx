@@ -34,6 +34,7 @@ export default function PostDisplay({ post, deletePost, groupId, amAdmin }: {
 	const [commentAccess, setCommentAccess] = useState(post.commentAccess);
 
 	async function handleDelete() {
+		if (deleting) return;
 		setDeleting(true);
 
 		for (let i = 0; i < post.files.length; ++i) {

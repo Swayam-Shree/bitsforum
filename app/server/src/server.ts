@@ -120,8 +120,16 @@ app.post("/createGroup", async (req: Request, res: Response) => {
 
 	res.send(result).status(200);
 });
-app.delete("/deleteGroup/:groupId", async (req: Request, res: Response) => {
-	const { groupId } = req.params;
+app.delete("/deleteGroup/:groupId-:uid", async (req: Request, res: Response) => {
+	const { groupId, uid } = req.params;
+
+	const group = await db.collection("groups").findOne({
+		_id: new ObjectId(String(groupId))
+	});
+
+	if (!group?.admins.includes(uid)) {
+		return;
+	}
 
 	let result = await db.collection("posts").deleteMany({
 		groupId: groupId
