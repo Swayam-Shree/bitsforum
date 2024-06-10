@@ -524,10 +524,10 @@ const sockets: { uid: string, socket: Socket }[] = [];
 
 io.on("connection", (socket) => {
 	console.log(`socket connected: ${socket.id}`);
-	socket.emit("notification", "Welcome to BITSForum");
-
+	
 	socket.on("addUser", (uid) => {
 		sockets.push({ uid, socket });
+		socket.emit("notification", "Welcome to BITSForum");
 	});
 
 	socket.on("disconnect", () => {

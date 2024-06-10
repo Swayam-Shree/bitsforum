@@ -27,7 +27,7 @@ export default function Navbar() {
 			setNotifOpen(true);
 		});
 
-		if (user) {
+		if (user && user?.email?.endsWith("bits-pilani.ac.in")) {
 			socket.emit("addUser", user.uid);
 		}
 	}, [user]);
