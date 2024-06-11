@@ -14,7 +14,7 @@ export default function Home() {
 	if (error) return <div>Error</div>;
 	
 	return (<div className="flex flex-col items-center mt-[100px] gap-[40px]">
-		<Typography variant="h6">Welcome to BITS forum</Typography>
+		<Typography variant="h5">Welcome to BITSForum</Typography>
 		<Button onClick={() => { navigate('/groups'); }} variant="contained">Browse Groups</Button>
 	</div>);
 }

@@ -58,8 +58,8 @@ export default function ManageUserTile({ uid, isAdmin, groupId, amAdmin, updateG
 		}
 	}
 
-	return (<div className="border-t-[1px] border-violet-800 py-[4px] text-center">
-		<div className="flex justify-around">
+	return (<div className="border-t-[1px] border-violet-800 py-[4px] text-center min-w-[300px] w-[50vw] max-w-[500px]">
+		<div className="flex justify-between gap-[32px]">
 			<Typography variant="body1">{email.slice(0, -18)}</Typography>
 			{
 				isAdmin && <Typography className="text-green-600" variant="caption">Admin</Typography>

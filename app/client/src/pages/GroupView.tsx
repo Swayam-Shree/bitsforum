@@ -203,8 +203,8 @@ export default function GroupView() {
 
 	return (<div>
 		<div className="flex flex-col items-center gap-[20px] m-[20px] p-[20px] border-solid border-[1px] rounded border-violet-800">
-			<Typography variant="h4">{groupDetails?.groupName}</Typography>
-			<Typography variant="h6">{groupDetails?.groupDesc}</Typography>
+			<Typography variant="h2">{groupDetails?.groupName}</Typography>
+			<Typography variant="h5">{groupDetails?.groupDesc}</Typography>
 
 			{
 				groupDetails?.admins.includes(auth.currentUser?.uid || "") ? ( <div className="flex justify-around gap-[32px]">
@@ -219,13 +219,14 @@ export default function GroupView() {
 				open={manageUserModal}
 				onClose={ () => setManageUserModal(false) }
 			>	
-				<div className="flex flex-col bg-white m-[32px] p-[32px] min-w-[300px] gap-[12px]">
-					<Button onClick={ () => setManageUserModal(false) } color="error" variant="contained">Close</Button>
+				<div className="flex flex-col items-center bg-white m-[32px] p-[32px] min-w-[300px] gap-[12px]">
+					<Button className="w-[50vw]" onClick={ () => setManageUserModal(false) } color="error" variant="contained">Close</Button>
 
 					{
-						groupDetails?.admins.includes(auth.currentUser?.uid || "") && <div className="flex flex-col gap-[12px]">
+						groupDetails?.admins.includes(auth.currentUser?.uid || "") && <div className="flex flex-col items-center gap-[12px]">
 							<Typography variant="h5">Add Members</Typography>
 							<TextField
+								className="w-[70vw]"
 								value={userEmail}
 								onChange={ (e) => setUserEmail(e.target.value) }
 								error={userEmailError}
@@ -234,7 +235,7 @@ export default function GroupView() {
 								helperText={userEmailErrorText}
 								size="small"
 							/>
-							<Button onClick={ handleAddUser } size="small" variant="contained">Add User</Button>
+							<Button className="w-[50vw]" onClick={ handleAddUser } size="small" variant="contained">Add User</Button>
 						</div>
 					}
 
@@ -262,12 +263,13 @@ export default function GroupView() {
 				open={postModal}
 				onClose={ () => setPostModal(false) }
 			>
-				<div className="flex flex-col bg-white m-[32px] p-[32px] min-w-[300px] gap-[12px]">
-					<Button color="error" onClick={ () => setPostModal(false) } variant="contained">Close</Button>
-					<Button onClick={ () => { setPostTitle(""); setPostContent(""); setPostFiles([]); } } color="error" variant="outlined">Clear</Button>
+				<div className="flex flex-col items-center bg-white m-[32px] p-[32px] min-w-[300px] gap-[12px]">
+					<Button className="w-[50vw]" color="error" onClick={ () => setPostModal(false) } variant="contained">Close</Button>
+					<Button className="w-[50vw]" onClick={ () => { setPostTitle(""); setPostContent(""); setPostFiles([]); } } color="error" variant="outlined">Clear</Button>
 
-					<Typography variant="h5">Add Post</Typography>
+					<Typography sx={{mt: 2}} variant="h5">Add Post</Typography>
 					<TextField
+						className="w-[70vw]"
 						value={postTitle}
 						onChange={ (e) => setPostTitle(e.target.value) }
 						label="Title"
@@ -277,6 +279,7 @@ export default function GroupView() {
 						error={postTitleError}
 					/>
 					<TextField
+						className="w-[70vw]"
 						value={postContent}
 						onChange={ (e) => setPostContent(e.target.value) }
 						label="Content"
@@ -287,21 +290,32 @@ export default function GroupView() {
 						inputProps={{ maxLength: 2048 }}
 						error={postContentError}
 					/>
-					<div className="flex flex-col">
+					<div className="grid grid-cols-2 gap-[32px]">
+						<div className="flex flex-col">
+							{
+								postFiles?.map( file => (<Typography key={file.name} variant="caption">
+									{"* " + file.name}
+								</Typography>))
+							}
+						</div>
 						{
-							postFiles?.map( file => (<Typography key={file.name} variant="caption">
-								{"-" + file.name}
-							</Typography>))
+							postFiles.length ? (
+								<div className="flex items-center">
+									<Button onClick={ () => setPostFiles([]) } color="error" variant="outlined">Clear Files</Button>
+								</div>
+							) : ("")
 						}
 					</div>
-					<Button component="label" variant="outlined" startIcon={<AttachFileIcon />}>
-						Add Files
-							<input onChange={ (e) => setPostFiles(postFiles?.concat(Array.from(e?.target?.files || []))) } type="file" hidden multiple />
-					</Button>
 					{
 						uploading && <LinearProgress />
 					}
-					<Button onClick={ handleCreatePost } variant="contained">Create Post</Button>
+					<div className="flex justify-around gap-[32px]">
+						<Button component="label" variant="outlined" startIcon={<AttachFileIcon />}>
+							Add Files
+								<input onChange={ (e) => setPostFiles(postFiles?.concat(Array.from(e?.target?.files || []))) } type="file" hidden multiple />
+						</Button>
+						<Button onClick={ handleCreatePost } color="success" variant="contained">Create Post</Button>
+					</div>
 				</div>
 			</Modal>
 

@@ -54,12 +54,12 @@ export default function JoinGroupCard({ data }: { data: Group }) {
 				onClose={ () => setLastAdminWarning(false) }
 			>
 				<div className="flex flex-col gap-[12px] p-[32px] bg-white rounded">
-					<Typography variant="h6">Warning</Typography>
+					<Typography variant="h4">Warning</Typography>
 					<Typography variant="body1">
 						You are the last admin in this group. Leaving will disband and delete the group.
 					</Typography>
 
-					<div className="grid grid-cols-[3fr_0.5fr] gap-[12px]">
+					<div className="grid grid-cols-[3fr_0.5fr] gap-[12px] max-w-[600px]">
 						<Button onClick={ () => setLastAdminWarning(false) } variant="outlined">Cancel</Button>
 						<Button onClick={ handleDelete } color="error" variant="contained">Delete</Button>
 					</div>

@@ -40,7 +40,7 @@ export default function Profile() {
 			<Typography variant="h4">---As Admin---</Typography>
 			{
 				adminGroups.length > 0 ? (
-					<div className="flex flex-col gap-[20px] mb-[60px]">
+					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[20px] mb-[60px]">
 						{
 							adminGroups.map((group: Group) => {
 								return <GroupCard data={ group } key={ group._id } />;
@@ -55,7 +55,7 @@ export default function Profile() {
 			<Typography variant="h4">---As Member---</Typography>
 			{
 				memberGroups.length > 0 ? (
-					<div className="flex flex-col gap-[20px] mb-[60px]">
+					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[20px] mb-[60px]">
 						{
 							memberGroups.map((group: Group) => {
 								return <GroupCard data={ group } key={ group._id } />;

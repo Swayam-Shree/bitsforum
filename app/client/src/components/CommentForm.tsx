@@ -78,30 +78,30 @@ export default function CommentForm({ amAdmin, access, postId, groupId, handleCl
 		}
 	}
 
-	return (<div className="flex flex-col bg-white m-[32px] p-[32px] min-w-[300px] gap-[12px] rounded">
-		<Button onClick={handleClose} size="small" color="error" variant="contained">Close</Button>
+	return (<div className="flex flex-col items-center bg-white m-[32px] p-[32px] min-w-[300px] gap-[12px] rounded">
+		<Button className="w-[50vw]" onClick={handleClose} size="small" color="error" variant="contained">Close</Button>
 
 		{
 			(access === 0 || (access === 1 && amAdmin)) &&
-			<div className="flex flex-col gap-[12px]">
-				<Typography variant="h5">Comments</Typography>
+			<div className="flex flex-col gap-[12px] items-center">
+				<Typography variant="h4">Comments</Typography>
 				<TextField
+					className="w-[70vw]"
 					error={textError}
 					value={text}
 					onChange={(e) => setText(e.target.value)}
 					label="comment..."
 					multiline
-					fullWidth
 					variant="outlined"
 					size="small"
 					inputProps={{ maxLength: 256 }}
 					helperText={helperText}
 				/>
-				<Button onClick={handleSubmit} size="small" color="success" variant="contained">Submit</Button>
+				<Button className="w-[50vw]" onClick={handleSubmit} size="small" color="success" variant="contained">Submit</Button>
 			</div>
 		}
 
-		<div className="flex flex-col gap-[12px]">
+		<div className="flex flex-col gap-[12px] w-[70vw]">
 			{
 				comments.length ? (
 					comments.map((comment, index) => {

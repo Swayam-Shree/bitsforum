@@ -77,7 +77,7 @@ export default function PostDisplay({ post, deletePost, groupId, amAdmin }: {
 	}
 
 	return (
-		<div className="flex flex-col border-solid border-[1px] border-violet-800 rounded p-[32px] min-w-[300px]">
+		<div className="flex flex-col border-solid border-[1px] border-violet-800 rounded p-[32px] w-[80vw]">
 			<div className="flex justify-between">
 				<Typography sx={{mb: 2}} variant="caption">{ "By: " + post.name }</Typography>
 				{

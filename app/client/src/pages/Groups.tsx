@@ -59,11 +59,13 @@ export default function Groups() {
 			unjoinedGroups.length > 0 ? (
 				<div className="flex flex-col items-center gap-[20px] my-[20px]">
 					<Typography variant="h4">Unjoined Groups</Typography>
-					{
-						unjoinedGroups.map((group: Group) => {
-							return <JoinGroupCard data={ group } key={ group._id } />;
-						})
-					}
+					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[20px]">
+						{
+							unjoinedGroups.map((group: Group) => {
+								return <JoinGroupCard data={ group } key={ group._id } />;
+							})
+						}
+					</div>
 				</div>
 			): (
 				<Typography variant="h6">No groups to join. Wait or create new.</Typography>
